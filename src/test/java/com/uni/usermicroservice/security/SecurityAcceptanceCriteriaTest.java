@@ -122,6 +122,16 @@ class SecurityAcceptanceCriteriaTest {
     }
 
     @Test
+    void anAuthenticatedRequestToAnUnmappedPathReturnsNotFoundNotUnauthorized() {
+        var tokens = createUserAndIssueTokens("notfound@example.com", "ADMINISTRACION");
+
+        client.get().uri("/api/v1/does-not-exist")
+                .cookie(ACCESS_COOKIE, tokens.accessCookie().getValue())
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
     void issuesHttpOnlySecureSameSiteStrictCookies() {
         var tokens = createUserAndIssueTokens("cookieattrs@example.com", "RESIDENTE");
 
