@@ -4,8 +4,8 @@ import com.uni.usermicroservice.identity.domain.Apartment;
 import com.uni.usermicroservice.identity.domain.ApartmentRepository;
 import com.uni.usermicroservice.identity.domain.Owner;
 import com.uni.usermicroservice.identity.domain.OwnerRepository;
+import com.uni.usermicroservice.identity.domain.ResidentUserService;
 import com.uni.usermicroservice.identity.domain.User;
-import com.uni.usermicroservice.identity.domain.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,20 +18,18 @@ import java.util.stream.Collectors;
 @Service
 public class ApartmentService {
 
-    private static final String PENDING_ACTIVATION_PASSWORD_HASH = "PENDING_ACTIVATION";
-
     private final ApartmentRepository apartmentRepository;
     private final OwnerRepository ownerRepository;
-    private final UserRepository userRepository;
+    private final ResidentUserService residentUserService;
 
     public ApartmentService(
             ApartmentRepository apartmentRepository,
             OwnerRepository ownerRepository,
-            UserRepository userRepository
+            ResidentUserService residentUserService
     ) {
         this.apartmentRepository = apartmentRepository;
         this.ownerRepository = ownerRepository;
-        this.userRepository = userRepository;
+        this.residentUserService = residentUserService;
     }
 
     @Transactional
@@ -125,31 +123,21 @@ public class ApartmentService {
     }
 
     private User resolveOwner(PropietarioRequest request) {
-        return userRepository.findByDocumentNumber(trimmed(request.documentNumber()))
-                .map(existing -> {
-                    applyOwnerDetails(existing, request);
-                    return existing;
-                })
-                .orElseGet(() -> userRepository.save(new User(
-                        trimmed(request.firstName()),
-                        trimmed(request.lastName()),
-                        trimmed(request.documentNumber()),
-                        normalizedEmailOf(request),
-                        PENDING_ACTIVATION_PASSWORD_HASH,
-                        request.phone()
-                )));
+        return residentUserService.resolveByDocument(detailsOf(request));
     }
 
     private void applyOwnerDetails(User user, PropietarioRequest request) {
-        user.setFirstName(trimmed(request.firstName()));
-        user.setLastName(trimmed(request.lastName()));
-        user.setDocumentNumber(trimmed(request.documentNumber()));
-        user.setEmail(normalizedEmailOf(request));
-        user.setPhone(request.phone());
+        residentUserService.apply(user, detailsOf(request));
     }
 
-    private static String normalizedEmailOf(PropietarioRequest request) {
-        return request.email().trim().toLowerCase();
+    private static ResidentUserService.ResidentDetails detailsOf(PropietarioRequest request) {
+        return ResidentUserService.ResidentDetails.normalized(
+                request.firstName(),
+                request.lastName(),
+                request.documentNumber(),
+                request.email(),
+                request.phone()
+        );
     }
 
     private PropietarioResponse principalOwnerResponseOf(Long apartmentId) {
