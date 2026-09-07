@@ -117,11 +117,6 @@ public class ApartmentService {
         apartment.setActivo(false);
     }
 
-    /**
-     * Solo permite editar al titular ya registrado. Un documento distinto significaria cambiar de
-     * persona, y sobrescribir el usuario existente le arrebataria su identidad, sus roles y sus
-     * sesiones activas a alguien que sigue siendo residente.
-     */
     private User updatableOwnerOf(Long apartmentId, User currentOwner, PropietarioRequest request) {
         if (!currentOwner.getDocumentNumber().equals(trimmed(request.documentNumber()))) {
             throw new OwnerTransferNotSupportedException(apartmentId);

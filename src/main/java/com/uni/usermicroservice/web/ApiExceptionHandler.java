@@ -55,11 +55,6 @@ public class ApiExceptionHandler {
         ));
     }
 
-    /**
-     * Red de seguridad para las restricciones que solo la base puede garantizar, como una insercion
-     * duplicada que gane la carrera contra la verificacion previa. El mensaje del driver lleva SQL,
-     * nombres de restriccion y valores, asi que queda en el log del servidor y no en la respuesta.
-     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolation(
             DataIntegrityViolationException exception,

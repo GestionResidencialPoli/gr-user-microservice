@@ -12,10 +12,6 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
 
     Optional<Owner> findByApartmentIdAndPrincipalTrue(Long apartmentId);
 
-    /**
-     * Carga en una sola consulta los propietarios principales de varios apartamentos, con su usuario
-     * ya resuelto, para que un listado paginado no dispare una consulta por fila.
-     */
     @Query("""
             select o from Owner o
             join fetch o.user
