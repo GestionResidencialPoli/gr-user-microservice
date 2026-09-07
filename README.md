@@ -82,11 +82,25 @@ En el primer arranque contra este PostgreSQL vacío, Flyway creará el esquema a
 
 ## Cómo ejecutar las pruebas
 
+Las pruebas unitarias (sufijo `*Test`) no levantan contexto de Spring y corren en segundos:
+
 ```bash
 ./mvnw test
 ```
 
-Las pruebas de integración usan PostgreSQL 16 mediante Testcontainers, por lo que requieren un motor Docker activo.
+Las pruebas de integración (sufijo `*IT`) levantan PostgreSQL 16 mediante Testcontainers, por lo que requieren un motor Docker activo. Para ejecutar solo las de integración:
+
+```bash
+./mvnw verify -Dsurefire.skip=true
+```
+
+Para ejecutar toda la suite (unitarias + integración):
+
+```bash
+./mvnw verify
+```
+
+La versión de la imagen de PostgreSQL usada por Testcontainers coincide con la de `docker-compose.yml`.
 
 ## Modelo de identidad
 

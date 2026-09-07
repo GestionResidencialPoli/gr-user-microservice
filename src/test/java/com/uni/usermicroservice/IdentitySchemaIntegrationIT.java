@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Testcontainers
 @SpringBootTest(properties = "spring.jpa.show-sql=false")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class IdentitySchemaIntegrationTests {
+class IdentitySchemaIntegrationIT {
 
     @Container
     @ServiceConnection
