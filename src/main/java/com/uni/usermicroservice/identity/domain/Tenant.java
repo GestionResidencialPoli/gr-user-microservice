@@ -55,4 +55,10 @@ public class Tenant {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    public Tenant(User user, Apartment apartment, LocalDate startDate) {
+        this.user = user;
+        this.apartment = apartment;
+        this.startDate = startDate;
+    }
 }

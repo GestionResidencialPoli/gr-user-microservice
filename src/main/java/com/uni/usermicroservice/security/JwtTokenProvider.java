@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.identity.domain.TipoResidente;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class JwtTokenProvider {
 
     private static final String ROLES_CLAIM = "roles";
+    private static final String TIPO_RESIDENTE_CLAIM = "tipoResidente";
 
     private final SecretKey signingKey;
     private final long accessTokenExpirationMinutes;
@@ -28,10 +30,20 @@ public class JwtTokenProvider {
     }
 
     public String generateAccessToken(String subject, Collection<String> roles) {
+        return generateAccessToken(subject, roles, null);
+    }
+
+    public String generateAccessToken(String subject, Collection<String> roles, TipoResidente tipoResidente) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(subject)
-                .claim(ROLES_CLAIM, roles)
+                .claim(ROLES_CLAIM, roles);
+
+        if (tipoResidente != null) {
+            builder.claim(TIPO_RESIDENTE_CLAIM, tipoResidente.name());
+        }
+
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenExpirationMinutes * 60)))
                 .signWith(signingKey)
@@ -55,5 +67,17 @@ public class JwtTokenProvider {
     @SuppressWarnings("unchecked")
     public List<String> rolesOf(Claims claims) {
         return (List<String>) claims.get(ROLES_CLAIM, List.class);
+    }
+
+    public Optional<TipoResidente> tipoResidenteOf(Claims claims) {
+        String value = claims.get(TIPO_RESIDENTE_CLAIM, String.class);
+        if (value == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(TipoResidente.valueOf(value));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 }

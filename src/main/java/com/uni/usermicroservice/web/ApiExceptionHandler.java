@@ -4,6 +4,9 @@ import com.uni.usermicroservice.apartment.ApartmentAlreadyExistsException;
 import com.uni.usermicroservice.apartment.ApartmentNotFoundException;
 import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
 import com.uni.usermicroservice.security.ApiError;
+import com.uni.usermicroservice.tenant.ApartmentInactiveException;
+import com.uni.usermicroservice.tenant.TenantAlreadyLinkedException;
+import com.uni.usermicroservice.tenant.TenantNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +38,8 @@ public class ApiExceptionHandler {
         ));
     }
 
-    @ExceptionHandler(ApartmentNotFoundException.class)
-    public ResponseEntity<ApiError> handleNotFound(ApartmentNotFoundException exception, HttpServletRequest request) {
+    @ExceptionHandler({ApartmentNotFoundException.class, TenantNotFoundException.class})
+    public ResponseEntity<ApiError> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiError.of(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
@@ -45,7 +48,12 @@ public class ApiExceptionHandler {
         ));
     }
 
-    @ExceptionHandler({ApartmentAlreadyExistsException.class, OwnerTransferNotSupportedException.class})
+    @ExceptionHandler({
+            ApartmentAlreadyExistsException.class,
+            OwnerTransferNotSupportedException.class,
+            ApartmentInactiveException.class,
+            TenantAlreadyLinkedException.class
+    })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.of(
                 HttpStatus.CONFLICT.value(),

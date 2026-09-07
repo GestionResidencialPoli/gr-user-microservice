@@ -1,6 +1,8 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.identity.domain.ResidencyTypeService;
 import com.uni.usermicroservice.identity.domain.Role;
+import com.uni.usermicroservice.identity.domain.TipoResidente;
 import com.uni.usermicroservice.identity.domain.User;
 import jakarta.persistence.EntityManager;
 import org.springframework.http.ResponseCookie;
@@ -27,6 +29,7 @@ public class AuthTokenService {
     private final JwtProperties jwtProperties;
     private final CookieProperties cookieProperties;
     private final EntityManager entityManager;
+    private final ResidencyTypeService residencyTypeService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthTokenService(
@@ -34,13 +37,15 @@ public class AuthTokenService {
             RefreshTokenRepository refreshTokenRepository,
             JwtProperties jwtProperties,
             CookieProperties cookieProperties,
-            EntityManager entityManager
+            EntityManager entityManager,
+            ResidencyTypeService residencyTypeService
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtProperties = jwtProperties;
         this.cookieProperties = cookieProperties;
         this.entityManager = entityManager;
+        this.residencyTypeService = residencyTypeService;
     }
 
     public record IssuedTokens(ResponseCookie accessCookie, ResponseCookie refreshCookie) {
@@ -48,7 +53,8 @@ public class AuthTokenService {
 
     @Transactional
     public IssuedTokens issueTokens(Long userId, String email, Collection<String> roles) {
-        String accessToken = jwtTokenProvider.generateAccessToken(email, roles);
+        TipoResidente tipoResidente = residencyTypeService.tipoResidenteOf(userId).orElse(null);
+        String accessToken = jwtTokenProvider.generateAccessToken(email, roles, tipoResidente);
 
         String rawRefreshToken = newRawToken();
         Instant expiresAt = Instant.now().plus(jwtProperties.refreshTokenExpirationDays(), ChronoUnit.DAYS);

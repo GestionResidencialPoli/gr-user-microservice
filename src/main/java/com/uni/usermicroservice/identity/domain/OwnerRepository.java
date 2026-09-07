@@ -12,6 +12,8 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
 
     Optional<Owner> findByApartmentIdAndPrincipalTrue(Long apartmentId);
 
+    boolean existsByUserId(Long userId);
+
     @Query("""
             select o from Owner o
             join fetch o.user
