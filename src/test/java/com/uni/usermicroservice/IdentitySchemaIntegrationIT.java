@@ -24,10 +24,16 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Usa un contenedor propio en vez del compartido de {@link com.uni.usermicroservice.support.AbstractIntegrationTest}
+ * porque el ultimo caso ({@link #schemaMismatchPreventsApplicationStartup()}) borra deliberadamente una columna
+ * para forzar un fallo de validacion de Hibernate. Compartir el contenedor dejaria el esquema roto para el resto
+ * de las pruebas de integracion que se ejecuten despues en la misma JVM.
+ */
 @Testcontainers
 @SpringBootTest(properties = "spring.jpa.show-sql=false")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class IdentitySchemaIntegrationTests {
+class IdentitySchemaIntegrationIT {
 
     @Container
     @ServiceConnection
