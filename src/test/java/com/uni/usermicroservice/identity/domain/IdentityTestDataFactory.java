@@ -2,12 +2,6 @@ package com.uni.usermicroservice.identity.domain;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Construye instancias validas de las entidades de identidad para pruebas,
- * evitando repetir en cada prueba los campos obligatorios del esquema.
- * Vive en el mismo paquete que las entidades porque su constructor sin
- * argumentos es protected.
- */
 public final class IdentityTestDataFactory {
 
     private static final AtomicLong SEQUENCE = new AtomicLong();

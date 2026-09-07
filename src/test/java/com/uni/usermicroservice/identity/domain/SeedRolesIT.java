@@ -10,11 +10,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Prueba de solo lectura que comparte el contenedor singleton de
- * {@link AbstractIntegrationTest} con {@link ApartmentPersistenceIT},
- * demostrando que el contenedor se reutiliza entre clases de prueba.
- */
 class SeedRolesIT extends AbstractIntegrationTest {
 
     @Autowired
