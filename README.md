@@ -28,6 +28,25 @@ El servicio se conecta a PostgreSQL mediante variables de entorno, con valores p
 | `DB_USERNAME` | Usuario de la base de datos        | `postgres`                                     |
 | `DB_PASSWORD` | Contraseña de la base de datos     | `postgres`                                     |
 | `JPA_SHOW_SQL` | Muestra las sentencias SQL de JPA | `false`                                        |
+| `JWT_SECRET` | Clave de firma HMAC del access token (obligatoria, mínimo 32 caracteres) | *(sin valor por defecto, la app no arranca sin ella)* |
+| `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` | Minutos de vigencia del access token | `15` |
+| `JWT_REFRESH_TOKEN_EXPIRATION_DAYS` | Días de vigencia del refresh token | `7` |
+| `CORS_ALLOWED_ORIGINS` | Origen(es) permitidos para el frontend Next.js | `http://localhost:3000` |
+| `COOKIE_SECURE` | Marca `Secure` en las cookies de sesión; `false` solo para desarrollo local sin HTTPS | `true` |
+
+### Autenticación por cookies
+
+La sesión se maneja con dos cookies `HttpOnly`, `Secure` y `SameSite=Strict`, nunca con encabezado `Authorization`:
+
+- `access_token`: JWT de corta duración, enviado en cada request (`Path=/`).
+- `refresh_token`: token opaco de larga duración, acotado a `Path=/api/v1/auth`, respaldado por la tabla `refresh_tokens` para poder revocarlo.
+
+Endpoints disponibles:
+
+- `POST /api/v1/auth/refresh`: rota el refresh token (revoca el actual, emite uno nuevo) y renueva el access token.
+- `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
+
+Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 
 ### Levantar PostgreSQL con Docker Compose
 
