@@ -141,7 +141,18 @@ Inspeccionar visualmente el SVG después de generarlo y confirmar que las cardin
 
 - Documentar toda variable de entorno en `.env.example` y en el README.
 - Nunca versionar secretos, tokens, credenciales reales ni datos personales.
-- Variables actuales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` y `JPA_SHOW_SQL`.
+- Variables actuales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JPA_SHOW_SQL`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES`, `JWT_REFRESH_TOKEN_EXPIRATION_DAYS`, `CORS_ALLOWED_ORIGINS` y `COOKIE_SECURE`.
+- `JWT_SECRET` es obligatoria y no tiene valor por defecto: la aplicación no debe arrancar si falta.
+
+## Autenticación: cookies, no encabezado Authorization
+
+Decisión vigente desde GR-47 (formalizada en `docs/decisiones/ADR-001-estrategia-tokens.md`): la sesión se transporta en dos cookies `HttpOnly`, `Secure` y `SameSite=Strict`, nunca en un encabezado `Authorization`.
+
+- `access_token`: JWT corto (`jwt.access-token-expiration-minutes`), válido en todo el sitio (`Path=/`).
+- `refresh_token`: token opaco de larga duración (`jwt.refresh-token-expiration-days`), acotado a `Path=/api/v1/auth` y respaldado por la tabla `refresh_tokens` (hash SHA-256, nunca el valor en claro) para permitir revocación server-side.
+- `POST /api/v1/auth/refresh` rota el refresh token; `POST /api/v1/auth/logout` lo revoca y limpia ambas cookies.
+- CSRF permanece habilitado (`CookieCsrfTokenRepository` + cookie legible `XSRF-TOKEN`): toda mutación debe incluir el encabezado `X-XSRF-TOKEN`.
+- No introducir un mecanismo paralelo de autenticación (por ejemplo, aceptar `Authorization: Bearer`) sin actualizar el ADR primero.
 - Los valores por defecto son solo para desarrollo local.
 
 ## Pruebas requeridas

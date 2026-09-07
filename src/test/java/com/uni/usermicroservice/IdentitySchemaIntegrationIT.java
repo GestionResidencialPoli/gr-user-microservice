@@ -25,7 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
-@SpringBootTest(properties = "spring.jpa.show-sql=false")
+@SpringBootTest(properties = {
+        "spring.jpa.show-sql=false",
+        "jwt.secret=a-secret-of-at-least-32-characters-long"
+})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class IdentitySchemaIntegrationIT {
 
@@ -64,7 +67,7 @@ class IdentitySchemaIntegrationIT {
                 "tenants"
         );
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("1");
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("2");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM roles", Integer.class))
                 .isEqualTo(3);
     }
@@ -122,7 +125,8 @@ class IdentitySchemaIntegrationIT {
                             "--spring.datasource.password=" + POSTGRES.getPassword(),
                             "--spring.flyway.enabled=false",
                             "--spring.jpa.hibernate.ddl-auto=validate",
-                            "--spring.main.banner-mode=off"
+                            "--spring.main.banner-mode=off",
+                            "--jwt.secret=a-secret-of-at-least-32-characters-long"
                     )) {
                 // El contexto no debe llegar a iniciar.
             }
