@@ -8,6 +8,7 @@ Microservicio de usuarios y autenticación de la plataforma de Gestión Residenc
 - Spring Boot 4.1.1
 - Spring Security
 - Spring Data JPA
+- Flyway
 - PostgreSQL
 - Maven
 
@@ -26,12 +27,15 @@ El servicio se conecta a PostgreSQL mediante variables de entorno, con valores p
 | `DB_URL`      | URL JDBC de conexión a PostgreSQL  | `jdbc:postgresql://localhost:5432/gr_user_db` |
 | `DB_USERNAME` | Usuario de la base de datos        | `postgres`                                     |
 | `DB_PASSWORD` | Contraseña de la base de datos     | `postgres`                                     |
+| `JPA_SHOW_SQL` | Muestra las sentencias SQL de JPA | `false`                                        |
 
 Antes de levantar el servicio, crea la base de datos en tu PostgreSQL local:
 
 ```sql
 CREATE DATABASE gr_user_db;
 ```
+
+Flyway crea y evoluciona el esquema automáticamente al arrancar. Hibernate está configurado con `ddl-auto=validate`: valida las entidades, pero nunca crea ni modifica tablas.
 
 ## Cómo ejecutar en local
 
@@ -46,6 +50,12 @@ El servicio queda disponible en `http://localhost:8080`.
 ```bash
 ./mvnw test
 ```
+
+Las pruebas de integración usan PostgreSQL 16 mediante Testcontainers, por lo que requieren un motor Docker activo.
+
+## Modelo de identidad
+
+El modelo entidad-relación y sus decisiones están publicados en [`docs/arquitectura/modelo-identidad.md`](docs/arquitectura/modelo-identidad.md). El SVG se genera desde la fuente `.mmd` usando Mermaid CLI.
 
 ## Flujo de trabajo
 
