@@ -32,8 +32,8 @@ class RefreshTokenSchemaIntegrationTest {
 
     private Long insertUser(String email) {
         jdbcTemplate.update(
-                "INSERT INTO users (first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?)",
-                "Test", "User", email, "irrelevant-hash-for-this-test");
+                "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
+                "Test", "User", "DOC-" + email, email, "irrelevant-hash-for-this-test");
         return jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
     }
 

@@ -1,6 +1,6 @@
 # Modelo relacional de identidad
 
-Este modelo cubre usuarios, roles, apartamentos, propietarios y arrendatarios del microservicio de identidad. La definición ejecutable del esquema está en `V1__create_identity_schema.sql`; el diagrama representa esa misma estructura.
+Este modelo cubre usuarios, roles, apartamentos, propietarios y arrendatarios del microservicio de identidad. La definición ejecutable del esquema está en `V1__create_identity_schema.sql`, con evoluciones posteriores en `V3__add_owner_and_apartment_fields.sql` (documento del propietario, coeficiente de copropiedad y área del apartamento); el diagrama representa la estructura resultante.
 
 ![Diagrama entidad-relación de identidad](modelo-identidad.svg)
 
@@ -24,6 +24,9 @@ npx --yes @mermaid-js/mermaid-cli -i docs/arquitectura/modelo-identidad.mmd -o d
 | --- | --- |
 | No repetir un apartamento | `uk_apartments_torre_numero` sobre `(torre, numero)` |
 | No repetir un correo normalizado | `uk_users_email` y `ck_users_email_normalized` |
+| No repetir el documento de identidad de una persona | `uk_users_document_number` |
+| El coeficiente de copropiedad debe estar entre 0 (exclusivo) y 1 | `ck_apartments_coeficiente_copropiedad_range` |
+| El área del apartamento debe ser positiva | `ck_apartments_area_positive` |
 | No repetir un rol por usuario | Clave primaria de `user_roles` |
 | No repetir una titularidad | `uk_owners_user_apartment` |
 | Solo un propietario principal por apartamento | Índice único parcial `uk_owners_principal_apartment` |

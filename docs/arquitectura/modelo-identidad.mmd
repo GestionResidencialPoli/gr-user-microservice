@@ -10,6 +10,7 @@ erDiagram
         bigint id PK
         varchar first_name
         varchar last_name
+        varchar document_number UK
         varchar email UK
         varchar password_hash
         varchar phone
@@ -28,6 +29,8 @@ erDiagram
         varchar torre "composite UK with numero"
         varchar numero "composite UK with torre"
         integer piso
+        numeric coeficiente_copropiedad
+        numeric area
         boolean activo
         timestamptz created_at
     }

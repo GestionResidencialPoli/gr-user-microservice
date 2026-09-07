@@ -48,6 +48,18 @@ Endpoints disponibles:
 
 Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 
+### Apartamentos y propietarios
+
+Endpoints bajo `/api/v1/apartamentos` (requieren autenticación; alta, edición y baja exigen rol `ADMINISTRACION`):
+
+- `POST /api/v1/apartamentos`: registra un apartamento y su propietario principal.
+- `GET /api/v1/apartamentos`: listado paginado (`page`, `size`) y filtrable (`torre`, `numero`) de apartamentos activos.
+- `GET /api/v1/apartamentos/{id}`: detalle de un apartamento, activo o no.
+- `PUT /api/v1/apartamentos/{id}`: actualiza los datos del apartamento y de su propietario principal.
+- `DELETE /api/v1/apartamentos/{id}`: baja lógica (`activo = false`); el historial permanece consultable por id.
+
+El propietario se identifica por su número de documento: si ya existe una persona con ese documento, se reutiliza y se actualizan sus datos de contacto; si no, se crea un usuario nuevo sin credenciales de acceso.
+
 ### Levantar PostgreSQL con Docker Compose
 
 1. Copia el archivo de variables:

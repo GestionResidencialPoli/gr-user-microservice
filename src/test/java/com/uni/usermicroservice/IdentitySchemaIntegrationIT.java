@@ -67,7 +67,7 @@ class IdentitySchemaIntegrationIT {
                 "tenants"
         );
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("2");
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("3");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM roles", Integer.class))
                 .isEqualTo(3);
     }
