@@ -1,0 +1,57 @@
+erDiagram
+    roles {
+        bigint id PK
+        varchar name UK
+        varchar description
+        timestamptz created_at
+    }
+
+    users {
+        bigint id PK
+        varchar first_name
+        varchar last_name
+        varchar email UK
+        varchar password_hash
+        varchar phone
+        varchar status
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    user_roles {
+        bigint user_id PK,FK
+        bigint role_id PK,FK
+    }
+
+    apartments {
+        bigint id PK
+        varchar torre "composite UK with numero"
+        varchar numero "composite UK with torre"
+        integer piso
+        boolean activo
+        timestamptz created_at
+    }
+
+    owners {
+        bigint id PK
+        bigint user_id FK "composite UK with apartment_id"
+        bigint apartment_id FK "composite UK with user_id"
+        boolean principal
+        timestamptz created_at
+    }
+
+    tenants {
+        bigint id PK
+        bigint user_id FK "composite UK with apartment_id and start_date"
+        bigint apartment_id FK "composite UK with user_id and start_date"
+        date start_date "composite UK with user_id and apartment_id"
+        date end_date
+        timestamptz created_at
+    }
+
+    users ||--o{ user_roles : has
+    roles ||--o{ user_roles : grants
+    users ||--o{ owners : owns_through
+    apartments ||--o{ owners : has_owners
+    users ||--o{ tenants : rents_through
+    apartments ||--o{ tenants : has_tenants
