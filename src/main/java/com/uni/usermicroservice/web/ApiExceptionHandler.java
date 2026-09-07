@@ -2,8 +2,11 @@ package com.uni.usermicroservice.web;
 
 import com.uni.usermicroservice.apartment.ApartmentAlreadyExistsException;
 import com.uni.usermicroservice.apartment.ApartmentNotFoundException;
+import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
 import com.uni.usermicroservice.security.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException exception, HttpServletRequest request) {
@@ -40,12 +45,32 @@ public class ApiExceptionHandler {
         ));
     }
 
-    @ExceptionHandler({ApartmentAlreadyExistsException.class, DataIntegrityViolationException.class})
+    @ExceptionHandler({ApartmentAlreadyExistsException.class, OwnerTransferNotSupportedException.class})
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.of(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
                 exception.getMessage(),
+                request.getRequestURI()
+        ));
+    }
+
+    /**
+     * Red de seguridad para las restricciones que solo la base puede garantizar, como una insercion
+     * duplicada que gane la carrera contra la verificacion previa. El mensaje del driver lleva SQL,
+     * nombres de restriccion y valores, asi que queda en el log del servidor y no en la respuesta.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Violacion de integridad de datos en {} {}", request.getMethod(), request.getRequestURI(), exception);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.of(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "La operacion no se pudo completar porque viola una restriccion de integridad de los datos.",
                 request.getRequestURI()
         ));
     }

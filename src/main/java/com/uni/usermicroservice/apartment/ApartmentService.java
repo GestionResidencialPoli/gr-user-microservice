@@ -11,6 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class ApartmentService {
 
@@ -32,13 +36,16 @@ public class ApartmentService {
 
     @Transactional
     public ApartmentResponse create(ApartmentRequest request) {
-        if (apartmentRepository.existsByTorreAndNumero(request.torre(), request.numero())) {
-            throw new ApartmentAlreadyExistsException(request.torre(), request.numero());
+        String torre = trimmed(request.torre());
+        String numero = trimmed(request.numero());
+
+        if (apartmentRepository.existsByTorreAndNumero(torre, numero)) {
+            throw new ApartmentAlreadyExistsException(torre, numero);
         }
 
         Apartment apartment = new Apartment(
-                request.torre(),
-                request.numero(),
+                torre,
+                numero,
                 request.piso(),
                 request.coeficienteCopropiedad(),
                 request.area()
@@ -63,8 +70,9 @@ public class ApartmentService {
     public PageResponse<ApartmentResponse> search(String torre, String numero, Pageable pageable) {
         Page<Apartment> apartments = apartmentRepository.search(likePatternOf(torre), likePatternOf(numero), pageable);
 
+        Map<Long, PropietarioResponse> ownersByApartmentId = principalOwnersOf(apartments.getContent());
         Page<ApartmentResponse> responses = apartments.map(
-                apartment -> ApartmentResponse.from(apartment, principalOwnerResponseOf(apartment.getId()))
+                apartment -> ApartmentResponse.from(apartment, ownersByApartmentId.get(apartment.getId()))
         );
 
         return PageResponse.from(responses);
@@ -75,18 +83,21 @@ public class ApartmentService {
         Apartment apartment = apartmentRepository.findById(id)
                 .orElseThrow(() -> new ApartmentNotFoundException(id));
 
-        if (apartmentRepository.existsByTorreAndNumeroAndIdNot(request.torre(), request.numero(), id)) {
-            throw new ApartmentAlreadyExistsException(request.torre(), request.numero());
+        String torre = trimmed(request.torre());
+        String numero = trimmed(request.numero());
+
+        if (apartmentRepository.existsByTorreAndNumeroAndIdNot(torre, numero, id)) {
+            throw new ApartmentAlreadyExistsException(torre, numero);
         }
 
-        apartment.setTorre(request.torre());
-        apartment.setNumero(request.numero());
+        apartment.setTorre(torre);
+        apartment.setNumero(numero);
         apartment.setPiso(request.piso());
         apartment.setCoeficienteCopropiedad(request.coeficienteCopropiedad());
         apartment.setArea(request.area());
 
         User owner = ownerRepository.findByApartmentIdAndPrincipalTrue(id)
-                .map(Owner::getUser)
+                .map(existing -> updatableOwnerOf(id, existing.getUser(), request.propietario()))
                 .orElseGet(() -> {
                     User newOwner = resolveOwner(request.propietario());
                     ownerRepository.save(new Owner(newOwner, apartment, true));
@@ -106,16 +117,28 @@ public class ApartmentService {
         apartment.setActivo(false);
     }
 
+    /**
+     * Solo permite editar al titular ya registrado. Un documento distinto significaria cambiar de
+     * persona, y sobrescribir el usuario existente le arrebataria su identidad, sus roles y sus
+     * sesiones activas a alguien que sigue siendo residente.
+     */
+    private User updatableOwnerOf(Long apartmentId, User currentOwner, PropietarioRequest request) {
+        if (!currentOwner.getDocumentNumber().equals(trimmed(request.documentNumber()))) {
+            throw new OwnerTransferNotSupportedException(apartmentId);
+        }
+        return currentOwner;
+    }
+
     private User resolveOwner(PropietarioRequest request) {
-        return userRepository.findByDocumentNumber(request.documentNumber())
+        return userRepository.findByDocumentNumber(trimmed(request.documentNumber()))
                 .map(existing -> {
                     applyOwnerDetails(existing, request);
                     return existing;
                 })
                 .orElseGet(() -> userRepository.save(new User(
-                        request.firstName(),
-                        request.lastName(),
-                        request.documentNumber(),
+                        trimmed(request.firstName()),
+                        trimmed(request.lastName()),
+                        trimmed(request.documentNumber()),
                         normalizedEmailOf(request),
                         PENDING_ACTIVATION_PASSWORD_HASH,
                         request.phone()
@@ -123,9 +146,9 @@ public class ApartmentService {
     }
 
     private void applyOwnerDetails(User user, PropietarioRequest request) {
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setDocumentNumber(request.documentNumber());
+        user.setFirstName(trimmed(request.firstName()));
+        user.setLastName(trimmed(request.lastName()));
+        user.setDocumentNumber(trimmed(request.documentNumber()));
         user.setEmail(normalizedEmailOf(request));
         user.setPhone(request.phone());
     }
@@ -141,7 +164,26 @@ public class ApartmentService {
                 .orElse(null);
     }
 
+    private Map<Long, PropietarioResponse> principalOwnersOf(List<Apartment> apartments) {
+        if (apartments.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> apartmentIds = apartments.stream().map(Apartment::getId).toList();
+
+        return ownerRepository.findPrincipalsWithUserByApartmentIdIn(apartmentIds).stream()
+                .collect(Collectors.toMap(
+                        owner -> owner.getApartment().getId(),
+                        owner -> PropietarioResponse.from(owner.getUser()),
+                        (first, duplicate) -> first
+                ));
+    }
+
+    private static String trimmed(String value) {
+        return value == null ? null : value.trim();
+    }
+
     private static String likePatternOf(String value) {
-        return (value == null || value.isBlank()) ? null : "%" + value.toLowerCase() + "%";
+        return (value == null || value.isBlank()) ? null : "%" + value.trim().toLowerCase() + "%";
     }
 }

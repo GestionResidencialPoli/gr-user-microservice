@@ -244,6 +244,83 @@ class ApartmentAcceptanceCriteriaTest {
     }
 
     @Test
+    void rejectsChangingTheOwnerDocumentOnUpdateAndLeavesTheCurrentOwnerIntact() {
+        String admin = adminAccessCookie();
+        String csrf = fetchCsrfToken(admin);
+
+        var created = client.post().uri("/api/v1/apartamentos")
+                .cookie(ACCESS_COOKIE, admin)
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(anApartmentRequest("F", "606"))
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CREATED)
+                .expectBody(ApartmentResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        ApartmentRequest transferAttempt = new ApartmentRequest(
+                "F", "606", 3, new BigDecimal("0.0123"), new BigDecimal("65.50"),
+                new PropietarioRequest("Carlos", "Gomez", "DOC-OTRO-DUENO", "carlos.gomez@example.com", "3111111111")
+        );
+
+        client.put().uri("/api/v1/apartamentos/" + created.id())
+                .cookie(ACCESS_COOKIE, admin)
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(transferAttempt)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CONFLICT);
+
+        client.get().uri("/api/v1/apartamentos/" + created.id())
+                .cookie(ACCESS_COOKIE, admin)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ApartmentResponse.class)
+                .value(response -> {
+                    assertThat(response.propietario().documentNumber()).isEqualTo("DOC-F606");
+                    assertThat(response.propietario().firstName()).isEqualTo("Ana");
+                    assertThat(response.propietario().email()).isEqualTo("ana.perez.f606@example.com");
+                });
+
+        Integer usersWithRejectedDocument = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM users WHERE document_number = ?", Integer.class, "DOC-OTRO-DUENO");
+        assertThat(usersWithRejectedDocument).isZero();
+    }
+
+    @Test
+    void trimsTorreAndNumeroSoPaddedValuesDoNotBypassTheUniqueConstraint() {
+        String admin = adminAccessCookie();
+        String csrf = fetchCsrfToken(admin);
+
+        PropietarioRequest propietario =
+                new PropietarioRequest("Ana", "Perez", "DOC-G707", "ana.perez.g707@example.com", "3000000000");
+
+        var created = client.post().uri("/api/v1/apartamentos")
+                .cookie(ACCESS_COOKIE, admin)
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(new ApartmentRequest(" G ", " 707 ", 3, null, null, propietario))
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CREATED)
+                .expectBody(ApartmentResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(created).isNotNull();
+        assertThat(created.torre()).isEqualTo("G");
+        assertThat(created.numero()).isEqualTo("707");
+
+        client.post().uri("/api/v1/apartamentos")
+                .cookie(ACCESS_COOKIE, admin)
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(new ApartmentRequest("G", "707", 3, null, null, propietario))
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
     void listingIsPaginatedWithTheRealTotalCount() {
         String admin = adminAccessCookie();
 

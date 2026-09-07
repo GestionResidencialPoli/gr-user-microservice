@@ -85,6 +85,61 @@ class ApartmentRequestValidationTest {
     }
 
     @Test
+    void rejectsANegativePiso() {
+        ApartmentRequest request = new ApartmentRequest(
+                "A", "101", -1, null, null, aValidPropietario()
+        );
+
+        Set<ConstraintViolation<ApartmentRequest>> violations = validator.validate(request);
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("piso"));
+    }
+
+    @Test
+    void rejectsATorreLongerThanTheColumn() {
+        ApartmentRequest request = new ApartmentRequest(
+                "T".repeat(21), "101", 3, null, null, aValidPropietario()
+        );
+
+        Set<ConstraintViolation<ApartmentRequest>> violations = validator.validate(request);
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("torre"));
+    }
+
+    @Test
+    void rejectsANumeroLongerThanTheColumn() {
+        ApartmentRequest request = new ApartmentRequest(
+                "A", "1".repeat(21), 3, null, null, aValidPropietario()
+        );
+
+        Set<ConstraintViolation<ApartmentRequest>> violations = validator.validate(request);
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("numero"));
+    }
+
+    @Test
+    void rejectsAnAreaThatOverflowsTheColumnPrecision() {
+        ApartmentRequest request = new ApartmentRequest(
+                "A", "101", 3, null, new BigDecimal("1234567.89"), aValidPropietario()
+        );
+
+        Set<ConstraintViolation<ApartmentRequest>> violations = validator.validate(request);
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("area"));
+    }
+
+    @Test
+    void rejectsAnOwnerDocumentNumberLongerThanTheColumn() {
+        PropietarioRequest propietario = new PropietarioRequest(
+                "Ana", "Perez", "9".repeat(31), "ana@example.com", "3000000000"
+        );
+
+        Set<ConstraintViolation<ApartmentRequest>> violations = validator.validate(aValidApartment(propietario));
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("propietario.documentNumber"));
+    }
+
+    @Test
     void rejectsANonPositiveArea() {
         ApartmentRequest request = new ApartmentRequest(
                 "A", "101", 3, null, new BigDecimal("0"), aValidPropietario()
