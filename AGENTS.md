@@ -170,6 +170,44 @@ Tipos habituales: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci` y `bu
 
 ## Pull Requests y Definition of Done
 
+### Convención para crear Pull Requests
+
+Cada PR debe representar un único work item de Jira y salir de una rama de trabajo actualizada con su rama destino. Para trabajo normal, el destino es `develop`; solo los `hotfix/*` se dirigen a `main`. Antes de abrirlo, integrar los cambios recientes de la rama destino mediante rebase o merge según el flujo acordado, resolver los conflictos y volver a ejecutar las verificaciones afectadas.
+
+Usar un título breve, trazable y orientado al cambio:
+
+```text
+GR-123: descripción breve en español
+```
+
+El cuerpo se escribe en Markdown, no sustituye la historia de Jira y debe permitir que otra persona entienda y revise el cambio sin reconstruir su contexto. Usar esta plantilla, eliminando las secciones que realmente no apliquen:
+
+```md
+## Resumen
+- Qué necesidad resuelve el PR.
+- Qué cambió y cuál es su alcance funcional o técnico.
+
+## Decisiones e impacto
+- Decisiones relevantes, compatibilidad, configuración o riesgos.
+- Para cambios de esquema: migración Flyway, restricciones e impacto de despliegue.
+
+## Verificación
+- `<comando ejecutado>` — resultado observado.
+- Pruebas manuales, de integración o evidencia adicional si aplica.
+
+## Fuera de alcance
+- Trabajo relacionado que deliberadamente no se incluye, si existe.
+
+## Checklist
+- [ ] Criterios de aceptación de Jira cubiertos.
+- [ ] Documentación y variables de entorno actualizadas cuando aplica.
+- [ ] Sin secretos, datos personales ni archivos generados innecesarios.
+```
+
+La sección **Resumen** debe decir qué se hizo, no limitarse a copiar el título. **Decisiones e impacto** explica especialmente aquello que pueda afectar a otros servicios, datos existentes, despliegues o compatibilidad. **Verificación** contiene comandos reales y su resultado; no declarar una prueba como ejecutada si no se ejecutó. Referenciar el work item (`GR-123`) en el título y la rama garantiza la trazabilidad incluso si la plataforma no enlaza Jira automáticamente.
+
+Para un cambio de Flyway, incluir el nombre de la migración, las tablas o restricciones afectadas y cómo se validó sobre PostgreSQL. Para una configuración de Docker, infraestructura o CI, indicar los servicios, puertos, volúmenes, variables y cualquier efecto persistente. Para un cambio de API, documentar endpoints, compatibilidad y ejemplos si alteran el contrato.
+
 Un PR debe:
 
 - Estar vinculado al work item.
