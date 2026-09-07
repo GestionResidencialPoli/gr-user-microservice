@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "jwt.secret=a-secret-of-at-least-32-characters-long"
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class IdentitySchemaIntegrationTests {
+class IdentitySchemaIntegrationIT {
 
     @Container
     @ServiceConnection

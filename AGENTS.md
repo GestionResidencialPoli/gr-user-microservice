@@ -40,6 +40,16 @@ Las pruebas de integración usan PostgreSQL 16 mediante Testcontainers. Antes de
 
 La prueba que comprueba `ddl-auto=validate` provoca deliberadamente un error de arranque por una columna faltante. Es normal ver ese stack trace si Maven termina con `BUILD SUCCESS` y todas las pruebas quedan en verde.
 
+Comandos separados para unitarias y de integración:
+
+```bash
+./mvnw test                          # solo unitarias (*Test), sin Docker, en segundos
+./mvnw verify -Dsurefire.skip=true    # solo de integración (*IT), requiere Docker
+./mvnw verify                         # ambas
+```
+
+Las clases de integración que no mutan el esquema deben extender `com.uni.usermicroservice.support.AbstractIntegrationTest`, que expone un contenedor de PostgreSQL compartido entre clases (patrón singleton, arrancado en un bloque estático, nunca detenido explícitamente). Una prueba que necesite romper o alterar el esquema deliberadamente debe declarar su propio contenedor `@Container`/`@Testcontainers` en vez de usar el compartido, para no dejar el esquema roto para las demás.
+
 ## Estructura relevante
 
 ```text
