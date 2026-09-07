@@ -75,8 +75,8 @@ class SecurityAcceptanceCriteriaTest {
 
     private Long insertUser(String email, String role) {
         jdbcTemplate.update(
-                "INSERT INTO users (first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?)",
-                "Test", "User", email, "irrelevant-hash-for-this-test");
+                "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
+                "Test", "User", "DOC-" + email, email, "irrelevant-hash-for-this-test");
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, role);
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);

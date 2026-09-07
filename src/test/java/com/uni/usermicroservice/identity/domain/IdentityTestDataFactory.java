@@ -14,6 +14,7 @@ public final class IdentityTestDataFactory {
         User user = new User();
         user.setFirstName("Nombre" + n);
         user.setLastName("Apellido" + n);
+        user.setDocumentNumber("DOC" + n);
         user.setEmail("usuario" + n + "@example.com");
         user.setPasswordHash("hash-" + n);
         user.setStatus(UserStatus.ACTIVE);
