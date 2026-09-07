@@ -22,18 +22,27 @@ class JwtTokenProviderTest {
 
     @Test
     void generatesAndParsesAValidToken() {
-        String token = jwtTokenProvider.generateAccessToken("resident@example.com", List.of("RESIDENTE"));
+        String token = jwtTokenProvider.generateAccessToken(42L, "resident@example.com", List.of("RESIDENTE"));
 
         Optional<Claims> claims = jwtTokenProvider.parseClaims(token);
 
         assertThat(claims).isPresent();
         assertThat(claims.get().getSubject()).isEqualTo("resident@example.com");
+        assertThat(jwtTokenProvider.userIdOf(claims.get())).isEqualTo(42L);
         assertThat(jwtTokenProvider.rolesOf(claims.get())).containsExactly("RESIDENTE");
     }
 
     @Test
+    void aValidTokenNeverContainsThePasswordOrItsHash() {
+        String token = jwtTokenProvider.generateAccessToken(42L, "resident@example.com", List.of("RESIDENTE"));
+
+        assertThat(jwtTokenProvider.parseClaims(token).get().keySet())
+                .doesNotContain("password", "passwordHash", "password_hash");
+    }
+
+    @Test
     void rejectsATamperedToken() {
-        String token = jwtTokenProvider.generateAccessToken("resident@example.com", List.of("RESIDENTE"));
+        String token = jwtTokenProvider.generateAccessToken(42L, "resident@example.com", List.of("RESIDENTE"));
         int middle = token.length() / 2;
         char flipped = token.charAt(middle) == 'a' ? 'b' : 'a';
         String tampered = token.substring(0, middle) + flipped + token.substring(middle + 1);
@@ -46,7 +55,7 @@ class JwtTokenProviderTest {
         JwtTokenProvider otherProvider = new JwtTokenProvider(
                 new JwtProperties("a-completely-different-secret-key-value", 15, 7)
         );
-        String token = otherProvider.generateAccessToken("resident@example.com", List.of("RESIDENTE"));
+        String token = otherProvider.generateAccessToken(42L, "resident@example.com", List.of("RESIDENTE"));
 
         assertThat(jwtTokenProvider.parseClaims(token)).isEmpty();
     }

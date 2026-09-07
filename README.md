@@ -43,6 +43,7 @@ La sesión se maneja con dos cookies `HttpOnly`, `Secure` y `SameSite=Strict`, n
 
 Endpoints disponibles:
 
+- `POST /api/v1/auth/login`: valida `{ email, password }` contra la base de datos (BCrypt) y, si el usuario existe, está activo y la contraseña coincide, emite ambas cookies. Ante cualquier fallo responde 401 con un mensaje genérico que no distingue si el correo existe.
 - `POST /api/v1/auth/refresh`: rota el refresh token (revoca el actual, emite uno nuevo) y renueva el access token.
 - `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
 

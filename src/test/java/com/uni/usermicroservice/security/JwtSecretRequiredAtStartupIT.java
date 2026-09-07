@@ -13,7 +13,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
-class JwtSecretRequiredAtStartupTest {
+class JwtSecretRequiredAtStartupIT {
 
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine")

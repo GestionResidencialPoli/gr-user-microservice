@@ -18,6 +18,7 @@ import java.util.Optional;
 public class JwtTokenProvider {
 
     private static final String ROLES_CLAIM = "roles";
+    private static final String USER_ID_CLAIM = "uid";
 
     private final SecretKey signingKey;
     private final long accessTokenExpirationMinutes;
@@ -27,10 +28,11 @@ public class JwtTokenProvider {
         this.accessTokenExpirationMinutes = jwtProperties.accessTokenExpirationMinutes();
     }
 
-    public String generateAccessToken(String subject, Collection<String> roles) {
+    public String generateAccessToken(Long userId, String subject, Collection<String> roles) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(subject)
+                .claim(USER_ID_CLAIM, userId)
                 .claim(ROLES_CLAIM, roles)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenExpirationMinutes * 60)))
@@ -55,5 +57,9 @@ public class JwtTokenProvider {
     @SuppressWarnings("unchecked")
     public List<String> rolesOf(Claims claims) {
         return (List<String>) claims.get(ROLES_CLAIM, List.class);
+    }
+
+    public Long userIdOf(Claims claims) {
+        return claims.get(USER_ID_CLAIM, Long.class);
     }
 }

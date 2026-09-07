@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,6 +21,7 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String ROLE_PREFIX = "ROLE_";
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -36,8 +39,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         CookieUtils.readCookie(request, cookieProperties.accessTokenName())
-                .flatMap(jwtTokenProvider::parseClaims)
-                .ifPresent(claims -> authenticate(claims, request));
+                .ifPresent(token -> jwtTokenProvider.parseClaims(token)
+                        .ifPresentOrElse(
+                                claims -> authenticate(claims, request),
+                                () -> log.warn(
+                                        "Token de acceso invalido o manipulado en {} desde {}",
+                                        request.getRequestURI(),
+                                        request.getRemoteAddr()
+                                )
+                        ));
 
         filterChain.doFilter(request, response);
     }

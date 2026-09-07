@@ -30,7 +30,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void authenticatesWhenTheAccessCookieIsValid() throws Exception {
-        String token = jwtTokenProvider.generateAccessToken("admin@example.com", List.of("ADMINISTRACION"));
+        String token = jwtTokenProvider.generateAccessToken(1L, "admin@example.com", List.of("ADMINISTRACION"));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setCookies(new Cookie(ACCESS_COOKIE_NAME, token));
         MockHttpServletResponse response = new MockHttpServletResponse();
