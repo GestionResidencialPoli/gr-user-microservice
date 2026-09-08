@@ -18,12 +18,19 @@ public class ResidencyTypeService {
 
     @Transactional(readOnly = true)
     public Optional<TipoResidente> tipoResidenteOf(Long userId) {
-        if (ownerRepository.existsByUserId(userId)) {
-            return Optional.of(TipoResidente.PROPIETARIO);
-        }
-        if (tenantRepository.existsByUserIdAndEndDateIsNull(userId)) {
-            return Optional.of(TipoResidente.ARRENDATARIO);
-        }
-        return Optional.empty();
+        return apartmentOf(userId).map(ApartmentSummary::tipoResidente);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ApartmentSummary> apartmentOf(Long userId) {
+        return ownerRepository.findByUserId(userId).stream()
+                .findFirst()
+                .map(owner -> summaryOf(owner.getApartment(), TipoResidente.PROPIETARIO))
+                .or(() -> tenantRepository.findActiveByUserId(userId)
+                        .map(tenant -> summaryOf(tenant.getApartment(), TipoResidente.ARRENDATARIO)));
+    }
+
+    private ApartmentSummary summaryOf(Apartment apartment, TipoResidente tipoResidente) {
+        return new ApartmentSummary(apartment.getTorre(), apartment.getNumero(), tipoResidente);
     }
 }
