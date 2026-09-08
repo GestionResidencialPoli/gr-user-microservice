@@ -54,7 +54,7 @@ public class AuthTokenService {
     @Transactional
     public IssuedTokens issueTokens(Long userId, String email, Collection<String> roles) {
         TipoResidente tipoResidente = residencyTypeService.tipoResidenteOf(userId).orElse(null);
-        String accessToken = jwtTokenProvider.generateAccessToken(email, roles, tipoResidente);
+        String accessToken = jwtTokenProvider.generateAccessToken(userId, email, roles, tipoResidente);
 
         String rawRefreshToken = newRawToken();
         Instant expiresAt = Instant.now().plus(jwtProperties.refreshTokenExpirationDays(), ChronoUnit.DAYS);

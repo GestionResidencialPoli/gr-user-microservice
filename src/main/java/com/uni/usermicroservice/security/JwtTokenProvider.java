@@ -19,6 +19,7 @@ import java.util.Optional;
 public class JwtTokenProvider {
 
     private static final String ROLES_CLAIM = "roles";
+    private static final String USER_ID_CLAIM = "uid";
     private static final String TIPO_RESIDENTE_CLAIM = "tipoResidente";
 
     private final SecretKey signingKey;
@@ -29,14 +30,15 @@ public class JwtTokenProvider {
         this.accessTokenExpirationMinutes = jwtProperties.accessTokenExpirationMinutes();
     }
 
-    public String generateAccessToken(String subject, Collection<String> roles) {
-        return generateAccessToken(subject, roles, null);
+    public String generateAccessToken(Long userId, String subject, Collection<String> roles) {
+        return generateAccessToken(userId, subject, roles, null);
     }
 
-    public String generateAccessToken(String subject, Collection<String> roles, TipoResidente tipoResidente) {
+    public String generateAccessToken(Long userId, String subject, Collection<String> roles, TipoResidente tipoResidente) {
         Instant now = Instant.now();
         var builder = Jwts.builder()
                 .subject(subject)
+                .claim(USER_ID_CLAIM, userId)
                 .claim(ROLES_CLAIM, roles);
 
         if (tipoResidente != null) {
@@ -67,6 +69,10 @@ public class JwtTokenProvider {
     @SuppressWarnings("unchecked")
     public List<String> rolesOf(Claims claims) {
         return (List<String>) claims.get(ROLES_CLAIM, List.class);
+    }
+
+    public Long userIdOf(Claims claims) {
+        return claims.get(USER_ID_CLAIM, Long.class);
     }
 
     public Optional<TipoResidente> tipoResidenteOf(Claims claims) {

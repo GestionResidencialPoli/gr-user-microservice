@@ -1,12 +1,12 @@
 package com.uni.usermicroservice.security;
 
 import com.uni.usermicroservice.UserMicroserviceApplication;
+import com.uni.usermicroservice.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,38 +14,26 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
 @SpringBootTest(
-        classes = {UserMicroserviceApplication.class, SecurityAcceptanceCriteriaTest.ProtectedTestController.class},
+        classes = {UserMicroserviceApplication.class, SecurityAcceptanceCriteriaIT.ProtectedTestController.class},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "jwt.secret=a-secret-of-at-least-32-characters-long",
                 "jwt.access-token-expiration-minutes=15",
                 "jwt.refresh-token-expiration-days=7",
                 "app.cors.allowed-origins=http://localhost:3000"
         }
 )
-class SecurityAcceptanceCriteriaTest {
+class SecurityAcceptanceCriteriaIT extends AbstractIntegrationTest {
 
     private static final String ACCESS_COOKIE = "access_token";
     private static final String REFRESH_COOKIE = "refresh_token";
     private static final String CSRF_COOKIE = "XSRF-TOKEN";
     private static final String CSRF_HEADER = "X-XSRF-TOKEN";
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("gr_user_test")
-            .withUsername("gr_user")
-            .withPassword("gr_user");
 
     @LocalServerPort
     private int port;

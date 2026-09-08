@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -63,8 +65,12 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.POST, AUTH_BASE_PATH + "/refresh", AUTH_BASE_PATH + "/logout")
-                        .permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                AUTH_BASE_PATH + "/login",
+                                AUTH_BASE_PATH + "/refresh",
+                                AUTH_BASE_PATH + "/logout"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -79,6 +85,11 @@ public class SecurityConfig {
                 new FilterRegistrationBean<>(jwtAuthenticationFilter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
