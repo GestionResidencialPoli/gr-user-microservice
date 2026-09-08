@@ -45,6 +45,9 @@ public class User {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
+    @Column(name = "document_number", nullable = false, length = 30)
+    private String documentNumber;
+
     @Column(nullable = false, length = 254)
     private String email;
 
@@ -79,4 +82,13 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public User(String firstName, String lastName, String documentNumber, String email, String passwordHash, String phone) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.documentNumber = documentNumber;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.phone = phone;
+    }
 }

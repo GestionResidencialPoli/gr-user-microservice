@@ -51,4 +51,10 @@ public class Owner {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    public Owner(User user, Apartment apartment, boolean principal) {
+        this.user = user;
+        this.apartment = apartment;
+        this.principal = principal;
+    }
 }

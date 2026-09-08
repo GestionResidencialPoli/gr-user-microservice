@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.identity.domain.TipoResidente;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -19,6 +20,7 @@ public class JwtTokenProvider {
 
     private static final String ROLES_CLAIM = "roles";
     private static final String USER_ID_CLAIM = "uid";
+    private static final String TIPO_RESIDENTE_CLAIM = "tipoResidente";
 
     private final SecretKey signingKey;
     private final long accessTokenExpirationMinutes;
@@ -29,11 +31,21 @@ public class JwtTokenProvider {
     }
 
     public String generateAccessToken(Long userId, String subject, Collection<String> roles) {
+        return generateAccessToken(userId, subject, roles, null);
+    }
+
+    public String generateAccessToken(Long userId, String subject, Collection<String> roles, TipoResidente tipoResidente) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(subject)
                 .claim(USER_ID_CLAIM, userId)
-                .claim(ROLES_CLAIM, roles)
+                .claim(ROLES_CLAIM, roles);
+
+        if (tipoResidente != null) {
+            builder.claim(TIPO_RESIDENTE_CLAIM, tipoResidente.name());
+        }
+
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenExpirationMinutes * 60)))
                 .signWith(signingKey)
@@ -61,5 +73,17 @@ public class JwtTokenProvider {
 
     public Long userIdOf(Claims claims) {
         return claims.get(USER_ID_CLAIM, Long.class);
+    }
+
+    public Optional<TipoResidente> tipoResidenteOf(Claims claims) {
+        String value = claims.get(TIPO_RESIDENTE_CLAIM, String.class);
+        if (value == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(TipoResidente.valueOf(value));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 }

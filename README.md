@@ -49,6 +49,42 @@ Endpoints disponibles:
 
 Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 
+### Apartamentos y propietarios
+
+Endpoints bajo `/api/v1/apartamentos` (requieren autenticación; alta, edición y baja exigen rol `ADMINISTRACION`):
+
+- `POST /api/v1/apartamentos`: registra un apartamento y su propietario principal.
+- `GET /api/v1/apartamentos`: listado paginado (`page`, `size`) y filtrable (`torre`, `numero`) de apartamentos activos.
+- `GET /api/v1/apartamentos/{id}`: detalle de un apartamento, activo o no.
+- `PUT /api/v1/apartamentos/{id}`: actualiza los datos del apartamento y de su propietario principal.
+- `DELETE /api/v1/apartamentos/{id}`: baja lógica (`activo = false`); el historial permanece consultable por id.
+
+El propietario se identifica por su número de documento: si ya existe una persona con ese documento, se reutiliza y se actualizan sus datos de contacto; si no, se crea un usuario nuevo sin credenciales de acceso.
+
+La edición no permite cambiar de titular: si el documento enviado no es el del propietario principal actual, la respuesta es `409`. El cambio de titularidad requiere histórico de propietario, que no está implementado.
+
+### Arrendatarios
+
+Endpoints bajo `/api/v1/apartamentos/{id}/arrendatarios` (todos exigen rol `ADMINISTRACION`, porque exponen datos personales del arrendatario):
+
+- `POST /api/v1/apartamentos/{id}/arrendatarios`: vincula un arrendatario al apartamento.
+- `GET /api/v1/apartamentos/{id}/arrendatarios`: lista los arrendatarios vigentes del apartamento.
+- `DELETE /api/v1/apartamentos/{id}/arrendatarios/{arrendatarioId}`: desvincula al arrendatario cerrando su arrendamiento con `end_date`; la fila se conserva como histórico.
+
+Reglas aplicadas:
+
+- Un apartamento inactivo no admite vincular arrendatarios (`409`).
+- Una persona no puede tener dos arrendamientos vigentes al mismo tiempo (`409`), regla garantizada por el índice parcial `uk_tenants_active_user`.
+- El arrendatario se identifica por documento igual que el propietario: se reutiliza la persona existente o se crea sin credenciales de acceso.
+
+### Tipo de residente en el token
+
+El access token incluye el claim `tipoResidente` con valor `PROPIETARIO` o `ARRENDATARIO`, ausente si la persona no tiene vínculo residencial. Se resuelve al emitir el token a partir de las tablas `owners` y `tenants`, y una titularidad tiene precedencia sobre un arrendamiento.
+
+El propósito es que los módulos financiero, de comunicaciones y de reservas distingan a quien habita el inmueble de quien lo posee sin multiplicar roles en el token: el rol sigue siendo `RESIDENTE` y el matiz viaja en este claim. La restricción de acceso a la información financiera se aplica en el servicio que expone ese dato, no en este microservicio.
+
+Como el claim se calcula al emitir el token, un cambio de vínculo residencial se refleja en la siguiente emisión. Un access token ya entregado conserva el valor anterior hasta expirar, dentro de la misma ventana descrita en `docs/decisiones/ADR-001-estrategia-tokens.md`.
+
 ### Levantar PostgreSQL con Docker Compose
 
 1. Copia el archivo de variables:

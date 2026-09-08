@@ -79,6 +79,8 @@ Reglas importantes protegidas por PostgreSQL:
 
 - `(torre, numero)` es único mediante `uk_apartments_torre_numero`.
 - Los correos se almacenan normalizados en minúsculas y no se repiten.
+- El documento de identidad de cada persona (`users.document_number`) es obligatorio y no se repite.
+- El coeficiente de copropiedad de un apartamento, si se registra, debe estar entre 0 (exclusivo) y 1; el área debe ser positiva.
 - Un usuario no puede repetir una titularidad sobre el mismo apartamento.
 - Solo puede existir un propietario marcado como principal por apartamento.
 - Un usuario no puede tener dos arrendamientos vigentes al mismo tiempo.
