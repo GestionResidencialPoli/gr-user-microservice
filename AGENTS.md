@@ -48,6 +48,8 @@ Comandos separados para unitarias y de integración:
 ./mvnw verify                         # ambas
 ```
 
+Esa separación es una regla, no una guía: una clase que levante Spring o Docker **debe** llamarse `*IT`. Si una prueba con `@SpringBootTest` o `@Testcontainers` se llama `*Test`, se cuela en la fase rápida y `./mvnw test` deja de servir como verificación de segundos. La fase unitaria completa debe terminar en menos de 30 segundos.
+
 Las clases de integración que no mutan el esquema deben extender `com.uni.usermicroservice.support.AbstractIntegrationTest`, que expone un contenedor de PostgreSQL compartido entre clases (patrón singleton, arrancado en un bloque estático, nunca detenido explícitamente). Una prueba que necesite romper o alterar el esquema deliberadamente debe declarar su propio contenedor `@Container`/`@Testcontainers` en vez de usar el compartido, para no dejar el esquema roto para las demás.
 
 ## Estructura relevante
