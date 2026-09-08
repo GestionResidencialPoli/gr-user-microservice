@@ -153,6 +153,7 @@ Decisión vigente desde GR-47 (formalizada en `docs/decisiones/ADR-001-estrategi
 - `access_token`: JWT corto (`jwt.access-token-expiration-minutes`), válido en todo el sitio (`Path=/`).
 - `refresh_token`: token opaco de larga duración (`jwt.refresh-token-expiration-days`), acotado a `Path=/api/v1/auth` y respaldado por la tabla `refresh_tokens` (hash SHA-256, nunca el valor en claro) para permitir revocación server-side.
 - `POST /api/v1/auth/refresh` rota el refresh token; `POST /api/v1/auth/logout` lo revoca y limpia ambas cookies.
+- Cerrar sesión revoca el refresh token de inmediato, pero el access token ya emitido sigue siendo válido hasta expirar: no existe lista de revocación. La ventana y su justificación están en el README y en el ADR-001. No introducir una lista de revocación sin actualizar el ADR primero.
 - CSRF permanece habilitado (`CookieCsrfTokenRepository` + cookie legible `XSRF-TOKEN`): toda mutación debe incluir el encabezado `X-XSRF-TOKEN`.
 - No introducir un mecanismo paralelo de autenticación (por ejemplo, aceptar `Authorization: Bearer`) sin actualizar el ADR primero.
 - Los valores por defecto son solo para desarrollo local.
