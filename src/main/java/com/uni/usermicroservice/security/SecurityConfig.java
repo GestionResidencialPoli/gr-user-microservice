@@ -69,7 +69,9 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 AUTH_BASE_PATH + "/login",
                                 AUTH_BASE_PATH + "/refresh",
-                                AUTH_BASE_PATH + "/logout"
+                                AUTH_BASE_PATH + "/logout",
+                                AUTH_BASE_PATH + "/password-reset",
+                                AUTH_BASE_PATH + "/password-reset/confirm"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

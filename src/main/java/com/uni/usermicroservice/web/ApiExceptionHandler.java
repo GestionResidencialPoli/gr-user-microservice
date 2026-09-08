@@ -4,6 +4,7 @@ import com.uni.usermicroservice.apartment.ApartmentAlreadyExistsException;
 import com.uni.usermicroservice.apartment.ApartmentNotFoundException;
 import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
 import com.uni.usermicroservice.security.ApiError;
+import com.uni.usermicroservice.security.PasswordResetTokenInvalidException;
 import com.uni.usermicroservice.tenant.ApartmentInactiveException;
 import com.uni.usermicroservice.tenant.TenantAlreadyLinkedException;
 import com.uni.usermicroservice.tenant.TenantNotFoundException;
@@ -34,6 +35,19 @@ public class ApiExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 message,
+                request.getRequestURI()
+        ));
+    }
+
+    @ExceptionHandler(PasswordResetTokenInvalidException.class)
+    public ResponseEntity<ApiError> handlePasswordResetToken(
+            PasswordResetTokenInvalidException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.badRequest().body(ApiError.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                exception.getMessage(),
                 request.getRequestURI()
         ));
     }

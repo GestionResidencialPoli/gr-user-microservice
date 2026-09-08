@@ -74,6 +74,7 @@ Las tablas actuales son:
 - `apartments`: unidades privadas identificadas por torre y número.
 - `owners`: relación de titularidad entre usuarios y apartamentos.
 - `tenants`: periodos de arrendamiento entre usuarios y apartamentos.
+- `password_reset_tokens`: tokens de un solo uso para restablecer la contrasena, con hash y vigencia.
 
 Reglas importantes protegidas por PostgreSQL:
 
@@ -153,6 +154,7 @@ Decisión vigente desde GR-47 (formalizada en `docs/decisiones/ADR-001-estrategi
 - `access_token`: JWT corto (`jwt.access-token-expiration-minutes`), válido en todo el sitio (`Path=/`).
 - `refresh_token`: token opaco de larga duración (`jwt.refresh-token-expiration-days`), acotado a `Path=/api/v1/auth` y respaldado por la tabla `refresh_tokens` (hash SHA-256, nunca el valor en claro) para permitir revocación server-side.
 - `POST /api/v1/auth/refresh` rota el refresh token; `POST /api/v1/auth/logout` lo revoca y limpia ambas cookies.
+- `POST /api/v1/auth/password-reset` y `/password-reset/confirm` permiten recuperar el acceso. Responden igual exista o no el correo, para no revelar que cuentas existen: no introducir validaciones ni restricciones que hagan diferir la respuesta entre un correo registrado y uno desconocido. La tabla `password_reset_tokens` guarda el hash SHA-256, nunca el token en claro.
 - Cerrar sesión revoca el refresh token de inmediato, pero el access token ya emitido sigue siendo válido hasta expirar: no existe lista de revocación. La ventana y su justificación están en el README y en el ADR-001. No introducir una lista de revocación sin actualizar el ADR primero.
 - CSRF permanece habilitado (`CookieCsrfTokenRepository` + cookie legible `XSRF-TOKEN`): toda mutación debe incluir el encabezado `X-XSRF-TOKEN`.
 - No introducir un mecanismo paralelo de autenticación (por ejemplo, aceptar `Authorization: Bearer`) sin actualizar el ADR primero.
