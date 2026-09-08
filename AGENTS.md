@@ -126,6 +126,7 @@ Consultar antes de modificar el modelo:
 - Mantener respuestas y errores consistentes.
 - Considerar paginación, filtros y ordenamiento en endpoints de colección.
 - Aplicar autorización por rol y por relación con el apartamento; un residente solo puede acceder a información pública o vinculada con su unidad.
+- La matriz completa de endpoints por rol vive en `docs/arquitectura/matriz-autorizacion.md`. Al agregar un endpoint, anotarlo con `@PreAuthorize` **en el controlador y en el método de servicio**, agregar su fila a la matriz y extender `AuthorizationMatrixIT`.
 
 ## Documentación Mermaid
 
