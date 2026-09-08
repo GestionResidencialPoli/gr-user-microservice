@@ -41,15 +41,4 @@ public class AuthenticationService {
         var roles = user.getRoles().stream().map(Role::getName).toList();
         return authTokenService.issueTokens(user.getId(), user.getEmail(), roles);
     }
-
-    @Transactional(readOnly = true)
-    public Optional<MeResponse> me(String email) {
-        return userRepository.findByEmail(email).map(user -> new MeResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRoles().stream().map(Role::getName).toList()
-        ));
-    }
 }
