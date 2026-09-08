@@ -53,6 +53,18 @@ El listado (`GET /api/v1/apartamentos`) queda restringido a `ADMINISTRACION` por
 
 Todos exigen `ADMINISTRACION`: la respuesta incluye documento, correo y teléfono del arrendatario.
 
+## Personal de vigilancia
+
+| Método | Ruta | `ADMINISTRACION` | `RESIDENTE` | `VIGILANTE` |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/vigilantes` | ✅ | ❌ | ❌ |
+| `GET` | `/api/v1/vigilantes` | ✅ | ❌ | ❌ |
+| `DELETE` | `/api/v1/vigilantes/{userId}` | ✅ | ❌ | ❌ |
+
+Un vigilante **no** puede crear ni listar otras cuentas de vigilancia: administrar el personal es competencia de administración.
+
+Estos endpoints tienen además una particularidad que ninguna otra ruta comparte: desactivar una cuenta surte efecto en la **siguiente petición** del afectado, sin esperar a que expire su access token. `JwtAuthenticationFilter` consulta el estado del usuario en cada petición autenticada, así que un vigilante desactivado recibe `401` de inmediato. El costo y la desviación frente al ADR-001 están explicados en el README.
+
 ## Respuestas ante falta de acceso
 
 La distinción importa y se verifica en las pruebas:
