@@ -82,13 +82,13 @@ El ADR-001 dejó anotado además que el criterio de aceptación de HU-1.6 deber�
 
 ### Apartamentos y propietarios
 
-Endpoints bajo `/api/v1/apartamentos` (requieren autenticación; alta, edición y baja exigen rol `ADMINISTRACION`):
+Endpoints bajo `/api/v1/apartamentos` (requieren autenticación):
 
-- `POST /api/v1/apartamentos`: registra un apartamento y su propietario principal.
-- `GET /api/v1/apartamentos`: listado paginado (`page`, `size`) y filtrable (`torre`, `numero`) de apartamentos activos.
-- `GET /api/v1/apartamentos/{id}`: detalle de un apartamento, activo o no.
-- `PUT /api/v1/apartamentos/{id}`: actualiza los datos del apartamento y de su propietario principal.
-- `DELETE /api/v1/apartamentos/{id}`: baja lógica (`activo = false`); el historial permanece consultable por id.
+- `POST /api/v1/apartamentos`: registra un apartamento y su propietario principal. Exige rol `ADMINISTRACION`.
+- `GET /api/v1/apartamentos`: listado paginado (`page`, `size`) y filtrable (`torre`, `numero`) de apartamentos activos. Exige rol `ADMINISTRACION`.
+- `GET /api/v1/apartamentos/{id}`: detalle de un apartamento, activo o no. Accesible para `ADMINISTRACION` sobre cualquier apartamento, o para un `RESIDENTE` que sea propietario o arrendatario vigente de ese apartamento específico; cualquier otro caso (otro residente, un vigilante) responde `403`.
+- `PUT /api/v1/apartamentos/{id}`: actualiza los datos del apartamento y de su propietario principal. Exige rol `ADMINISTRACION`.
+- `DELETE /api/v1/apartamentos/{id}`: baja lógica (`activo = false`); el historial permanece consultable por id. Exige rol `ADMINISTRACION`.
 
 El propietario se identifica por su número de documento: si ya existe una persona con ese documento, se reutiliza y se actualizan sus datos de contacto; si no, se crea un usuario nuevo sin credenciales de acceso.
 
