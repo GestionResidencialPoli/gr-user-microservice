@@ -6,6 +6,7 @@ import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
 import com.uni.usermicroservice.guard.VigilanteAlreadyExistsException;
 import com.uni.usermicroservice.guard.VigilanteNotFoundException;
 import com.uni.usermicroservice.security.ApiError;
+import com.uni.usermicroservice.security.IncorrectCurrentPasswordException;
 import com.uni.usermicroservice.security.PasswordResetTokenInvalidException;
 import com.uni.usermicroservice.tenant.ApartmentInactiveException;
 import com.uni.usermicroservice.tenant.TenantAlreadyLinkedException;
@@ -54,7 +55,24 @@ public class ApiExceptionHandler {
         ));
     }
 
-    @ExceptionHandler({ApartmentNotFoundException.class, TenantNotFoundException.class, VigilanteNotFoundException.class})
+    @ExceptionHandler(IncorrectCurrentPasswordException.class)
+    public ResponseEntity<ApiError> handleIncorrectCurrentPassword(
+            IncorrectCurrentPasswordException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiError.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                exception.getMessage(),
+                request.getRequestURI()
+        ));
+    }
+
+    @ExceptionHandler({
+            ApartmentNotFoundException.class,
+            TenantNotFoundException.class,
+            VigilanteNotFoundException.class
+    })
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiError.of(
                 HttpStatus.NOT_FOUND.value(),

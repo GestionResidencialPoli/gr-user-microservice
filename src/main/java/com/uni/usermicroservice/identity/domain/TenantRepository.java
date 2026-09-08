@@ -17,6 +17,14 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
 
     @Query("""
             select t from Tenant t
+            join fetch t.apartment
+            where t.user.id = :userId
+            and t.endDate is null
+            """)
+    Optional<Tenant> findActiveByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            select t from Tenant t
             join fetch t.user
             where t.apartment.id = :apartmentId
             and t.endDate is null

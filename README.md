@@ -44,6 +44,9 @@ La sesión se maneja con dos cookies `HttpOnly`, `Secure` y `SameSite=Strict`, n
 Endpoints disponibles:
 
 - `POST /api/v1/auth/login`: valida `{ email, password }` contra la base de datos (BCrypt) y, si el usuario existe, está activo y la contraseña coincide, emite ambas cookies. Ante cualquier fallo responde 401 con un mensaje genérico que no distingue si el correo existe.
+- `GET /api/v1/auth/me`: devuelve `{ id, email, firstName, lastName, phone, roles, apartment }` del usuario autenticado por la cookie `access_token`. `apartment` es `{ torre, numero, tipoResidente }` si la persona es propietaria o arrendataria vigente de algún apartamento, o `null` si no tiene ningún vínculo residencial. Es la única forma que tiene el frontend de conocer la identidad y el rol de la sesión, ya que el access token es `HttpOnly` y el login no devuelve cuerpo.
+- `PATCH /api/v1/auth/me`: recibe `{ phone }` y actualiza el teléfono de contacto del usuario autenticado. Devuelve el `MeResponse` actualizado. El DTO de entrada solo expone `phone`: cualquier otro campo enviado (por ejemplo `role`) se ignora, el rol nunca se puede cambiar desde este endpoint.
+- `POST /api/v1/auth/me/password`: recibe `{ currentPassword, newPassword }`, verifica la contraseña actual y aplica la nueva si cumple la política mínima. Responde `401` si la contraseña actual no coincide, `400` con el detalle de la regla incumplida si la nueva no cumple la política. Revoca las sesiones activas (refresh tokens) del usuario, igual que el restablecimiento de contraseña.
 - `POST /api/v1/auth/refresh`: rota el refresh token (revoca el actual, emite uno nuevo) y renueva el access token.
 - `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
 - `POST /api/v1/auth/password-reset`: solicita el restablecimiento indicando `{ email }`. Responde `202` **siempre**, exista o no el correo.
@@ -112,6 +115,16 @@ Es una limitacion aceptada del alcance de la etapa 1: el ticket excluye explicit
 - Mientras exista esta limitacion, el servicio no deberia exponerse a usuarios reales.
 
 Sustituir el registro por un envio de correo es el unico cambio necesario para cerrarla, y no altera el resto del flujo.
+
+### Matriz de autorizacion
+
+El catalogo completo de endpoints y de que rol puede invocar cada uno esta en
+[`docs/arquitectura/matriz-autorizacion.md`](docs/arquitectura/matriz-autorizacion.md). Ahi tambien se explica la
+diferencia entre `401` y `403`, la autorizacion a nivel de instancia y por que la restriccion se aplica en dos capas.
+
+Resumen: los endpoints de `/api/v1/auth` son publicos; todo lo demas exige rol `ADMINISTRACION`, salvo el detalle de
+un apartamento, que un `RESIDENTE` puede consultar solo si es su propietario o su arrendatario vigente. Al agregar un
+endpoint hay que anotarlo, sumar su fila a la matriz y extender `AuthorizationMatrixIT`.
 
 ### Cuentas del personal de vigilancia
 
