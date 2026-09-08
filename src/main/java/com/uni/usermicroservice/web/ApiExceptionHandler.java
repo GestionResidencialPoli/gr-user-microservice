@@ -4,6 +4,7 @@ import com.uni.usermicroservice.apartment.ApartmentAlreadyExistsException;
 import com.uni.usermicroservice.apartment.ApartmentNotFoundException;
 import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
 import com.uni.usermicroservice.security.ApiError;
+import com.uni.usermicroservice.security.IncorrectCurrentPasswordException;
 import com.uni.usermicroservice.security.PasswordResetTokenInvalidException;
 import com.uni.usermicroservice.tenant.ApartmentInactiveException;
 import com.uni.usermicroservice.tenant.TenantAlreadyLinkedException;
@@ -47,6 +48,19 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(ApiError.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
+                exception.getMessage(),
+                request.getRequestURI()
+        ));
+    }
+
+    @ExceptionHandler(IncorrectCurrentPasswordException.class)
+    public ResponseEntity<ApiError> handleIncorrectCurrentPassword(
+            IncorrectCurrentPasswordException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiError.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
                 exception.getMessage(),
                 request.getRequestURI()
         ));

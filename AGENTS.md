@@ -48,6 +48,8 @@ Comandos separados para unitarias y de integración:
 ./mvnw verify                         # ambas
 ```
 
+Esa separación es una regla, no una guía: una clase que levante Spring o Docker **debe** llamarse `*IT`. Si una prueba con `@SpringBootTest` o `@Testcontainers` se llama `*Test`, se cuela en la fase rápida y `./mvnw test` deja de servir como verificación de segundos. La fase unitaria completa debe terminar en menos de 30 segundos.
+
 Las clases de integración que no mutan el esquema deben extender `com.uni.usermicroservice.support.AbstractIntegrationTest`, que expone un contenedor de PostgreSQL compartido entre clases (patrón singleton, arrancado en un bloque estático, nunca detenido explícitamente). Una prueba que necesite romper o alterar el esquema deliberadamente debe declarar su propio contenedor `@Container`/`@Testcontainers` en vez de usar el compartido, para no dejar el esquema roto para las demás.
 
 ## Estructura relevante
@@ -126,6 +128,7 @@ Consultar antes de modificar el modelo:
 - Mantener respuestas y errores consistentes.
 - Considerar paginación, filtros y ordenamiento en endpoints de colección.
 - Aplicar autorización por rol y por relación con el apartamento; un residente solo puede acceder a información pública o vinculada con su unidad.
+- La matriz completa de endpoints por rol vive en `docs/arquitectura/matriz-autorizacion.md`. Al agregar un endpoint, anotarlo con `@PreAuthorize` **en el controlador y en el método de servicio**, agregar su fila a la matriz y extender `AuthorizationMatrixIT`.
 
 ## Documentación Mermaid
 

@@ -14,6 +14,14 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
 
     boolean existsByUserId(Long userId);
 
+    @Query("""
+            select o from Owner o
+            join fetch o.apartment
+            where o.user.id = :userId
+            order by o.id asc
+            """)
+    List<Owner> findByUserId(@Param("userId") Long userId);
+
     boolean existsByUserIdAndApartmentId(Long userId, Long apartmentId);
 
     @Query("""

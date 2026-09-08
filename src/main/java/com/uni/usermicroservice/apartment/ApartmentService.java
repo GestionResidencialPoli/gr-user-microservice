@@ -8,6 +8,7 @@ import com.uni.usermicroservice.identity.domain.ResidentUserService;
 import com.uni.usermicroservice.identity.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class ApartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public ApartmentResponse create(ApartmentRequest request) {
         String torre = trimmed(request.torre());
         String numero = trimmed(request.numero());
@@ -57,6 +59,7 @@ public class ApartmentService {
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMINISTRACION') or @apartmentAccessGuard.canView(#id, authentication)")
     public ApartmentResponse findById(Long id) {
         Apartment apartment = apartmentRepository.findById(id)
                 .orElseThrow(() -> new ApartmentNotFoundException(id));
@@ -65,6 +68,7 @@ public class ApartmentService {
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public PageResponse<ApartmentResponse> search(String torre, String numero, Pageable pageable) {
         Page<Apartment> apartments = apartmentRepository.search(likePatternOf(torre), likePatternOf(numero), pageable);
 
@@ -77,6 +81,7 @@ public class ApartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public ApartmentResponse update(Long id, ApartmentRequest request) {
         Apartment apartment = apartmentRepository.findById(id)
                 .orElseThrow(() -> new ApartmentNotFoundException(id));
@@ -108,6 +113,7 @@ public class ApartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public void deactivate(Long id) {
         Apartment apartment = apartmentRepository.findById(id)
                 .orElseThrow(() -> new ApartmentNotFoundException(id));

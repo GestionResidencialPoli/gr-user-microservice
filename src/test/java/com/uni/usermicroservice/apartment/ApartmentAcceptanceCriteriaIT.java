@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "app.cors.allowed-origins=http://localhost:3000"
         }
 )
-class ApartmentAcceptanceCriteriaTest {
+class ApartmentAcceptanceCriteriaIT {
 
     private static final String ACCESS_COOKIE = "access_token";
     private static final String CSRF_COOKIE = "XSRF-TOKEN";
