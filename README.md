@@ -48,6 +48,37 @@ Endpoints disponibles:
 
 Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 
+### Cerrar sesión y la ventana del access token
+
+Cerrar sesión no es solo borrar las cookies en el navegador. El frontend **debe** invocar `POST /api/v1/auth/logout`; es lo único que revoca el refresh token en el servidor. Si el cliente descarta las cookies sin llamar al endpoint, ese refresh token sigue activo hasta que expire, y cualquiera que lo tenga puede seguir renovando la sesión durante días.
+
+La llamada requiere el encabezado `X-XSRF-TOKEN` como cualquier otra mutación. Sin él la petición recibe `403` y **la sesión no se cierra**: el refresh token queda intacto. El endpoint es idempotente y responde `204` incluso sin cookie de refresco o si se invoca dos veces, así que el frontend puede llamarlo sin comprobar antes si la sesión sigue viva. Solo revoca la sesión cuyo refresh token se envía; las demás sesiones del mismo usuario, por ejemplo en otro dispositivo, siguen activas.
+
+#### Limitación conocida
+
+Tras cerrar sesión, **el access token que ya se había emitido sigue siendo criptográficamente válido hasta que expire**, como máximo `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` (15 minutos por defecto). El servidor no lo invalida porque no lo puede invalidar: un JWT sin estado se valida comprobando su firma y su fecha de expiración, sin consultar la base de datos. No existe lista de revocación.
+
+Esto significa que quien conserve una copia de ese access token (una extensión del navegador, un proxy, un registro, el historial de una herramienta de red) puede seguir invocando endpoints protegidos durante esa ventana, aunque el usuario ya haya cerrado sesión.
+
+Es una diferencia conceptual con las sesiones en servidor, donde cerrar sesión destruye la sesión y el efecto es inmediato:
+
+| | Sesión en servidor | JWT sin estado (este proyecto) |
+| --- | --- | --- |
+| Efecto del cierre de sesión | inmediato | inmediato solo para el refresh token |
+| Access token tras cerrar sesión | inválido | válido hasta expirar (≤ 15 min) |
+| Costo de validar | consulta de estado compartido | verificación de firma, sin E/S |
+| Varias réplicas | requiere estado compartido | sin estado compartido |
+
+La decisión fue deliberada y está documentada en [`docs/decisiones/ADR-001-estrategia-tokens.md`](docs/decisiones/ADR-001-estrategia-tokens.md), que evaluó las alternativas y aceptó esta ventana de 15 minutos para el alcance actual (Módulo 1, una sola réplica). Introducir una lista de revocación reintroduciría estado compartido entre réplicas, que es justo lo que la arquitectura sin estado busca evitar.
+
+Consecuencias prácticas para quien construya el frontend:
+
+- Llamar siempre a `POST /api/v1/auth/logout`, no basta con limpiar el almacenamiento local.
+- Redirigir al inicio de sesión y bloquear el acceso a las pantallas protegidas por ruta, sin asumir que el token dejó de servir.
+- Reducir `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` acorta la ventana a costa de más renovaciones.
+
+El ADR-001 dejó anotado además que el criterio de aceptación de HU-1.6 debería exigir explícitamente que el cliente invoque el endpoint y que el servidor confirme `revoked_at` no nulo, no solo que el navegador borre las cookies.
+
 ### Apartamentos y propietarios
 
 Endpoints bajo `/api/v1/apartamentos` (requieren autenticación; alta, edición y baja exigen rol `ADMINISTRACION`):
