@@ -135,6 +135,28 @@ El servicio queda disponible en `http://localhost:8080`.
 
 En el primer arranque contra este PostgreSQL vacío, Flyway creará el esquema automáticamente. No se deben ejecutar scripts SQL manuales para crear tablas.
 
+`./mvnw spring-boot:run` activa por defecto el perfil `dev` (configurado en el `spring-boot-maven-plugin` del `pom.xml`), que además de crear el esquema carga los **datos semilla** descritos abajo. El jar empaquetado (el que corre en cualquier otro entorno, incluida producción) no activa ningún perfil por su cuenta: los datos semilla solo existen si alguien pide explícitamente el perfil `dev`.
+
+### Datos semilla para desarrollo, pruebas y demostración
+
+Con el perfil `dev` activo, la migración `db/seed/V900__seed_datos_desarrollo.sql` deja la base con:
+
+- Un usuario por rol, con acceso real:
+
+  | Rol | Correo | Contraseña |
+  |-----|--------|------------|
+  | RESIDENTE | `residente.demo@gestionresidencial.test` | `Semilla#2026` |
+  | VIGILANTE | `vigilante.demo@gestionresidencial.test` | `Semilla#2026` |
+  | ADMINISTRACION | `admin.demo@gestionresidencial.test` | `Semilla#2026` |
+
+  El usuario `residente.demo` es además el propietario principal del apartamento Torre A - 101, para poder probar de punta a punta las funciones que dependen del claim `tipoResidente`.
+
+- Dos torres (A y B) con diez apartamentos en total, cada uno con su propietario principal; tres de ellos tienen además un arrendatario vigente. Los usuarios de propietarios y arrendatarios de relleno no tienen credenciales de acceso (`password_hash = 'PENDING_ACTIVATION'`), igual que produce hoy el alta real de un propietario o arrendatario sin invitación.
+
+> **Alcance no cubierto por esta semilla:** zonas comunes, reservas, cobros y pagos de administración no están sembrados porque ese modelo de datos todavía no existe en este microservicio (son el alcance de TEC-3.1 y TEC-5.1, ambos pendientes en el backlog). Cuando esos módulos se implementen, esta migración deberá ampliarse para cumplir el resto de los criterios de aceptación de GR-50 (zonas comunes, cobros/pagos y al menos un apartamento en mora).
+
+Convención de versionado: cualquier futura migración de datos semilla bajo `db/seed/` debe numerarse desde `V900` en adelante, para no chocar con los números de versión de los cambios reales de esquema en `db/migration/`.
+
 ## Cómo ejecutar las pruebas
 
 Las pruebas unitarias (sufijo `*Test`) no levantan contexto de Spring y corren en segundos:

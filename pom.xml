@@ -109,6 +109,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Solo afecta a "mvnw spring-boot:run" (desarrollo local).
+                         El jar empaquetado (el que corre en cualquier otro entorno)
+                         no activa ningun perfil por defecto: ver GR-50. -->
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
