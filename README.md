@@ -46,6 +46,8 @@ Endpoints disponibles:
 - `POST /api/v1/auth/login`: valida `{ email, password }` contra la base de datos (BCrypt) y, si el usuario existe, está activo y la contraseña coincide, emite ambas cookies. Ante cualquier fallo responde 401 con un mensaje genérico que no distingue si el correo existe.
 - `POST /api/v1/auth/refresh`: rota el refresh token (revoca el actual, emite uno nuevo) y renueva el access token.
 - `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
+- `POST /api/v1/auth/password-reset`: solicita el restablecimiento indicando `{ email }`. Responde `202` **siempre**, exista o no el correo.
+- `POST /api/v1/auth/password-reset/confirm`: recibe `{ token, newPassword }`, actualiza la contraseña y consume el token.
 
 Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 
@@ -79,6 +81,37 @@ Consecuencias prácticas para quien construya el frontend:
 - Reducir `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` acorta la ventana a costa de más renovaciones.
 
 El ADR-001 dejó anotado además que el criterio de aceptación de HU-1.6 debería exigir explícitamente que el cliente invoque el endpoint y que el servidor confirme `revoked_at` no nulo, no solo que el navegador borre las cookies.
+
+### Recuperar el acceso cuando se olvida la contrasena
+
+El flujo tiene dos pasos y no requiere sesion: ambos endpoints son publicos porque quien los usa, por definicion, no puede autenticarse.
+
+1. `POST /api/v1/auth/password-reset` con `{ email }` genera un token de un solo uso con **30 minutos** de vigencia.
+2. `POST /api/v1/auth/password-reset/confirm` con `{ token, newPassword }` actualiza la contrasena y marca el token como consumido.
+
+Propiedades de seguridad del flujo:
+
+- **No revela que correos existen.** La respuesta es `202` con cuerpo vacio tanto si el correo esta registrado como si no. La diferencia solo se ve en el registro del servidor, nunca en la respuesta. Por eso tampoco existe una restriccion de base de datos que pueda hacer fallar la peticion para un correo registrado y no para uno desconocido: eso reintroduciria el canal de enumeracion por la puerta de atras.
+- **Se almacena el hash SHA-256 del token, nunca el valor en claro.** Se reutiliza el mismo mecanismo que la tabla `refresh_tokens`, asi que ni con acceso de lectura a la base se puede reconstruir un enlace valido.
+- **Un solo uso.** Al consumirse queda `used_at` no nulo y cualquier reintento responde `400`.
+- **Solicitar un enlace nuevo invalida el anterior.** Solo el ultimo enviado sirve.
+- **Restablecer la contrasena revoca las sesiones activas** de ese usuario. No lo pide el criterio de aceptacion, pero una recuperacion de acceso que deja vivas las sesiones de quien tomo control de la cuenta no recupera nada.
+- Las contrasenas se guardan con BCrypt y deben cumplir la politica minima: al menos 8 caracteres, una minuscula, una mayuscula y un digito. La validacion vive en la anotacion reutilizable `@PasswordPolicy`.
+
+#### Limitacion conocida
+
+**No hay envio de correo.** El token se escribe en el registro de la aplicacion con nivel `INFO`, incluyendo el identificador del usuario y el valor en claro:
+
+```
+Token de restablecimiento emitido para el usuario 42. Vence en 30 minutos. Token: xY9...
+```
+
+Es una limitacion aceptada del alcance de la etapa 1: el ticket excluye explicitamente el envio de correo. Tiene dos consecuencias que conviene tener presentes antes de cualquier despliegue real:
+
+- Quien pueda leer los registros de la aplicacion puede restablecer la contrasena de cualquier usuario. En un entorno compartido o con los registros centralizados, eso equivale a acceso administrativo.
+- Mientras exista esta limitacion, el servicio no deberia exponerse a usuarios reales.
+
+Sustituir el registro por un envio de correo es el unico cambio necesario para cerrarla, y no altera el resto del flujo.
 
 ### Apartamentos y propietarios
 

@@ -15,15 +15,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
+    private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
     private final CookieProperties cookieProperties;
 
     public AuthController(
             AuthenticationService authenticationService,
+            PasswordResetService passwordResetService,
             AuthTokenService authTokenService,
             CookieProperties cookieProperties
     ) {
         this.authenticationService = authenticationService;
+        this.passwordResetService = passwordResetService;
         this.authTokenService = authTokenService;
         this.cookieProperties = cookieProperties;
     }
@@ -43,6 +46,18 @@ public class AuthController {
                                 httpRequest.getRequestURI()
                         )
                 ));
+    }
+
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmation request) {
+        passwordResetService.confirmReset(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/refresh")

@@ -64,10 +64,12 @@ class IdentitySchemaIntegrationIT {
                 "user_roles",
                 "apartments",
                 "owners",
-                "tenants"
+                "tenants",
+                "refresh_tokens",
+                "password_reset_tokens"
         );
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("3");
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("4");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM roles", Integer.class))
                 .isEqualTo(3);
     }
