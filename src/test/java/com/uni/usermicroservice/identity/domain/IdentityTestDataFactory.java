@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.identity.domain;
 
+import com.uni.usermicroservice.support.TestPasswords;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class IdentityTestDataFactory {
@@ -16,7 +17,7 @@ public final class IdentityTestDataFactory {
         user.setLastName("Apellido" + n);
         user.setDocumentNumber("DOC" + n);
         user.setEmail("usuario" + n + "@example.com");
-        user.setPasswordHash("hash-" + n);
+        user.setPasswordHash(TestPasswords.UNUSABLE_BCRYPT_HASH);
         user.setStatus(UserStatus.ACTIVE);
         return user;
     }

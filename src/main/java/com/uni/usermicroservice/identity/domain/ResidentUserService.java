@@ -1,16 +1,21 @@
 package com.uni.usermicroservice.identity.domain;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Service
 public class ResidentUserService {
 
-    private static final String PENDING_ACTIVATION_PASSWORD_HASH = "PENDING_ACTIVATION";
-
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final SecureRandom secureRandom = new SecureRandom();
 
-    public ResidentUserService(UserRepository userRepository) {
+    public ResidentUserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User resolveByDocument(ResidentDetails details) {
@@ -24,7 +29,7 @@ public class ResidentUserService {
                         details.lastName(),
                         details.documentNumber(),
                         details.email(),
-                        PENDING_ACTIVATION_PASSWORD_HASH,
+                        unusablePasswordHash(),
                         details.phone()
                 )));
     }
@@ -35,6 +40,13 @@ public class ResidentUserService {
         user.setDocumentNumber(details.documentNumber());
         user.setEmail(details.email());
         user.setPhone(details.phone());
+    }
+
+    private String unusablePasswordHash() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        String unguessableSecret = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return passwordEncoder.encode(unguessableSecret);
     }
 
     public record ResidentDetails(

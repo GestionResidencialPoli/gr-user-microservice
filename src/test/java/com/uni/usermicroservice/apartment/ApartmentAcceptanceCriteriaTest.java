@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.apartment;
 
+import com.uni.usermicroservice.support.TestPasswords;
 import com.uni.usermicroservice.UserMicroserviceApplication;
 import com.uni.usermicroservice.security.AuthTokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,7 @@ class ApartmentAcceptanceCriteriaTest {
     private String issueAccessCookie(String email, String role) {
         jdbcTemplate.update(
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
-                "Test", "User", "DOC-" + System.nanoTime(), email, "irrelevant-hash-for-this-test");
+                "Test", "User", "DOC-" + System.nanoTime(), email, TestPasswords.UNUSABLE_BCRYPT_HASH);
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, role);
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
