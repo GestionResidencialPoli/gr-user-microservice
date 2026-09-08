@@ -113,6 +113,16 @@ Es una limitacion aceptada del alcance de la etapa 1: el ticket excluye explicit
 
 Sustituir el registro por un envio de correo es el unico cambio necesario para cerrarla, y no altera el resto del flujo.
 
+### Matriz de autorizacion
+
+El catalogo completo de endpoints y de que rol puede invocar cada uno esta en
+[`docs/arquitectura/matriz-autorizacion.md`](docs/arquitectura/matriz-autorizacion.md). Ahi tambien se explica la
+diferencia entre `401` y `403`, la autorizacion a nivel de instancia y por que la restriccion se aplica en dos capas.
+
+Resumen: los endpoints de `/api/v1/auth` son publicos; todo lo demas exige rol `ADMINISTRACION`, salvo el detalle de
+un apartamento, que un `RESIDENTE` puede consultar solo si es su propietario o su arrendatario vigente. Al agregar un
+endpoint hay que anotarlo, sumar su fila a la matriz y extender `AuthorizationMatrixIT`.
+
 ### Apartamentos y propietarios
 
 Endpoints bajo `/api/v1/apartamentos` (requieren autenticación):

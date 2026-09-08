@@ -7,6 +7,7 @@ import com.uni.usermicroservice.identity.domain.ResidentUserService;
 import com.uni.usermicroservice.identity.domain.Tenant;
 import com.uni.usermicroservice.identity.domain.TenantRepository;
 import com.uni.usermicroservice.identity.domain.User;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class TenantService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public ArrendatarioResponse link(Long apartmentId, ArrendatarioRequest request) {
         Apartment apartment = apartmentRepository.findById(apartmentId)
                 .orElseThrow(() -> new ApartmentNotFoundException(apartmentId));
@@ -52,6 +54,7 @@ public class TenantService {
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public List<ArrendatarioResponse> activeTenantsOf(Long apartmentId) {
         if (!apartmentRepository.existsById(apartmentId)) {
             throw new ApartmentNotFoundException(apartmentId);
@@ -63,6 +66,7 @@ public class TenantService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public void unlink(Long apartmentId, Long tenantId) {
         Tenant tenant = tenantRepository.findByIdAndApartmentIdAndEndDateIsNull(tenantId, apartmentId)
                 .orElseThrow(() -> new TenantNotFoundException(tenantId, apartmentId));
