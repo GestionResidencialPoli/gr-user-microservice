@@ -11,6 +11,8 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
 
     boolean existsByUserIdAndEndDateIsNull(Long userId);
 
+    boolean existsByUserIdAndApartmentIdAndEndDateIsNull(Long userId, Long apartmentId);
+
     Optional<Tenant> findByIdAndApartmentIdAndEndDateIsNull(Long id, Long apartmentId);
 
     @Query("""

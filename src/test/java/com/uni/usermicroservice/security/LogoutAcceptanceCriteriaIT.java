@@ -67,10 +67,10 @@ class LogoutAcceptanceCriteriaIT {
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
                 "Test", "User", "DOC-" + System.nanoTime(), email, "irrelevant-hash-for-this-test");
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, "RESIDENTE");
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, "ADMINISTRACION");
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
 
-        return authTokenService.issueTokens(userId, email, List.of("RESIDENTE"));
+        return authTokenService.issueTokens(userId, email, List.of("ADMINISTRACION"));
     }
 
     private String fetchCsrfToken() {
@@ -191,7 +191,7 @@ class LogoutAcceptanceCriteriaIT {
         var firstSession = signIn("logout-one-session@example.com");
         Long userId = jdbcTemplate.queryForObject(
                 "SELECT id FROM users WHERE email = ?", Long.class, "logout-one-session@example.com");
-        var secondSession = authTokenService.issueTokens(userId, "logout-one-session@example.com", List.of("RESIDENTE"));
+        var secondSession = authTokenService.issueTokens(userId, "logout-one-session@example.com", List.of("ADMINISTRACION"));
         String csrf = fetchCsrfToken();
 
         logout(firstSession.refreshCookie().getValue(), csrf);

@@ -39,6 +39,7 @@ public class ApartmentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMINISTRACION')")
     public ResponseEntity<PageResponse<ApartmentResponse>> search(
             @RequestParam(required = false) String torre,
             @RequestParam(required = false) String numero,
@@ -48,6 +49,7 @@ public class ApartmentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRACION') or @apartmentAccessGuard.canView(#id, authentication)")
     public ResponseEntity<ApartmentResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(apartmentService.findById(id));
     }
