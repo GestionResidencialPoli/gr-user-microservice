@@ -44,6 +44,7 @@ La sesión se maneja con dos cookies `HttpOnly`, `Secure` y `SameSite=Strict`, n
 Endpoints disponibles:
 
 - `POST /api/v1/auth/login`: valida `{ email, password }` contra la base de datos (BCrypt) y, si el usuario existe, está activo y la contraseña coincide, emite ambas cookies. Ante cualquier fallo responde 401 con un mensaje genérico que no distingue si el correo existe.
+- `GET /api/v1/auth/me`: devuelve `{ id, email, firstName, lastName, roles }` del usuario autenticado por la cookie `access_token`. Es la única forma que tiene el frontend de conocer la identidad y el rol de la sesión, ya que el access token es `HttpOnly` y el login no devuelve cuerpo.
 - `POST /api/v1/auth/refresh`: rota el refresh token (revoca el actual, emite uno nuevo) y renueva el access token.
 - `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
 - `POST /api/v1/auth/password-reset`: solicita el restablecimiento indicando `{ email }`. Responde `202` **siempre**, exista o no el correo.
