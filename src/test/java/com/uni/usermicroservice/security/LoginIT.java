@@ -78,9 +78,12 @@ class LoginIT extends AbstractIntegrationTest {
     }
 
     private Long insertUser(String email, String rawPassword, String role, boolean active) {
+        String documentNumber = "DOC-" + email.substring(0, email.indexOf('@'));
         jdbcTemplate.update(
-                "INSERT INTO users (first_name, last_name, email, password_hash, status) VALUES (?, ?, ?, ?, ?)",
-                "Test", "User", email, PASSWORD_ENCODER.encode(rawPassword), active ? "ACTIVE" : "INACTIVE"
+                "INSERT INTO users (first_name, last_name, document_number, email, password_hash, status) "
+                        + "VALUES (?, ?, ?, ?, ?, ?)",
+                "Test", "User", documentNumber, email, PASSWORD_ENCODER.encode(rawPassword),
+                active ? "ACTIVE" : "INACTIVE"
         );
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, role);
