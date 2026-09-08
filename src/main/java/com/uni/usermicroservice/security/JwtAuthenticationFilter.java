@@ -1,5 +1,7 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.identity.domain.UserRepository;
+import com.uni.usermicroservice.identity.domain.UserStatus;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,10 +28,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CookieProperties cookieProperties;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CookieProperties cookieProperties) {
+    public JwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider,
+            CookieProperties cookieProperties,
+            UserRepository userRepository
+    ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.cookieProperties = cookieProperties;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -53,6 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void authenticate(Claims claims, HttpServletRequest request) {
+        if (!isStillActive(claims, request)) {
+            return;
+        }
+
         List<GrantedAuthority> authorities = jwtTokenProvider.rolesOf(claims).stream()
                 .map(role -> new SimpleGrantedAuthority(ROLE_PREFIX + role))
                 .map(GrantedAuthority.class::cast)
@@ -61,5 +73,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         var authentication = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
         authentication.setDetails(request.getRemoteAddr());
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private boolean isStillActive(Claims claims, HttpServletRequest request) {
+        Long userId = jwtTokenProvider.userIdOf(claims);
+        if (userId == null) {
+            return false;
+        }
+
+        UserStatus status = userRepository.findStatusById(userId).orElse(null);
+        if (status == UserStatus.ACTIVE) {
+            return true;
+        }
+
+        log.warn(
+                "Token valido de un usuario que ya no esta activo (id {}, estado {}) en {}",
+                userId, status, request.getRequestURI());
+        return false;
     }
 }

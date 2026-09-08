@@ -113,6 +113,31 @@ Es una limitacion aceptada del alcance de la etapa 1: el ticket excluye explicit
 
 Sustituir el registro por un envio de correo es el unico cambio necesario para cerrarla, y no altera el resto del flujo.
 
+### Cuentas del personal de vigilancia
+
+Endpoints bajo `/api/v1/vigilantes`, todos con rol `ADMINISTRACION`:
+
+- `POST /api/v1/vigilantes`: crea la cuenta con nombre, documento, correo y contrasena inicial. La contrasena cumple la
+  politica minima y se guarda con BCrypt.
+- `GET /api/v1/vigilantes`: lista los vigilantes con su estado.
+- `DELETE /api/v1/vigilantes/{userId}`: desactiva la cuenta (`status = INACTIVE`) y revoca sus refresh tokens.
+
+#### El estado se valida en cada peticion
+
+Desactivar un vigilante tiene efecto **inmediato**: su siguiente peticion a cualquier endpoint protegido responde `401`,
+sin esperar a que expire el access token. `JwtAuthenticationFilter` consulta el estado del usuario en cada peticion,
+usando el claim `uid` del token y una lectura de una sola columna por clave primaria.
+
+Esto se aparta de la ventana de 15 minutos que el
+[ADR-001](docs/decisiones/ADR-001-estrategia-tokens.md) acepto para el cierre de sesion, y es deliberado: el propio ADR
+dice que tolerar esa ventana tras desactivar a quien opera el control de acceso fisico no es un riesgo aceptable para
+este dominio.
+
+El costo es una consulta a base de datos por peticion autenticada. Con una sola replica es despreciable, pero en un
+escenario con varias replicas se convierte en carga sobre la base compartida. Si eso llega a pesar, la salida no es
+quitar la verificacion sino cachearla con un tiempo de vida corto, aceptando una ventana acotada y explicita en lugar
+de la de 15 minutos del token.
+
 ### Apartamentos y propietarios
 
 Endpoints bajo `/api/v1/apartamentos` (requieren autenticación):

@@ -3,6 +3,8 @@ package com.uni.usermicroservice.web;
 import com.uni.usermicroservice.apartment.ApartmentAlreadyExistsException;
 import com.uni.usermicroservice.apartment.ApartmentNotFoundException;
 import com.uni.usermicroservice.apartment.OwnerTransferNotSupportedException;
+import com.uni.usermicroservice.guard.VigilanteAlreadyExistsException;
+import com.uni.usermicroservice.guard.VigilanteNotFoundException;
 import com.uni.usermicroservice.security.ApiError;
 import com.uni.usermicroservice.security.PasswordResetTokenInvalidException;
 import com.uni.usermicroservice.tenant.ApartmentInactiveException;
@@ -52,7 +54,7 @@ public class ApiExceptionHandler {
         ));
     }
 
-    @ExceptionHandler({ApartmentNotFoundException.class, TenantNotFoundException.class})
+    @ExceptionHandler({ApartmentNotFoundException.class, TenantNotFoundException.class, VigilanteNotFoundException.class})
     public ResponseEntity<ApiError> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiError.of(
                 HttpStatus.NOT_FOUND.value(),
@@ -66,7 +68,8 @@ public class ApiExceptionHandler {
             ApartmentAlreadyExistsException.class,
             OwnerTransferNotSupportedException.class,
             ApartmentInactiveException.class,
-            TenantAlreadyLinkedException.class
+            TenantAlreadyLinkedException.class,
+            VigilanteAlreadyExistsException.class
     })
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.of(
