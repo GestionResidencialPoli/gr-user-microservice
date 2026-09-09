@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.support.TestPasswords;
 import com.uni.usermicroservice.UserMicroserviceApplication;
 import com.uni.usermicroservice.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +45,7 @@ class MeEndpointIT extends AbstractIntegrationTest {
         String email = "me-endpoint@example.com";
         jdbcTemplate.update(
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
-                "Camila", "Restrepo", "DOC-ME-1", email, "irrelevant-hash-for-this-test");
+                "Camila", "Restrepo", "DOC-ME-1", email, TestPasswords.UNUSABLE_BCRYPT_HASH);
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, "RESIDENTE");
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);

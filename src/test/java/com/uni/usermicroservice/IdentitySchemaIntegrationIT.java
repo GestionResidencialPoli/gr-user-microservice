@@ -69,7 +69,7 @@ class IdentitySchemaIntegrationIT {
                 "password_reset_tokens"
         );
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("4");
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("5");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM roles", Integer.class))
                 .isEqualTo(3);
     }

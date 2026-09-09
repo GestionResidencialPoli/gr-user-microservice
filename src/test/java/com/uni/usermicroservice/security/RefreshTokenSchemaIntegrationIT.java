@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.support.TestPasswords;
 import com.uni.usermicroservice.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ class RefreshTokenSchemaIntegrationIT extends AbstractIntegrationTest {
     private Long insertUser(String email) {
         jdbcTemplate.update(
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
-                "Test", "User", "DOC-" + email, email, "irrelevant-hash-for-this-test");
+                "Test", "User", "DOC-" + email, email, TestPasswords.UNUSABLE_BCRYPT_HASH);
         return jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
     }
 

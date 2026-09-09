@@ -1,5 +1,6 @@
 package com.uni.usermicroservice.security;
 
+import com.uni.usermicroservice.support.TestPasswords;
 import com.uni.usermicroservice.UserMicroserviceApplication;
 import com.uni.usermicroservice.apartment.ApartmentRequest;
 import com.uni.usermicroservice.apartment.PropietarioRequest;
@@ -340,7 +341,7 @@ class AuthorizationMatrixIT {
     private Long createUserWithRole(String email, String role) {
         jdbcTemplate.update(
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
-                "Test", "User", "DOC-" + uniqueId(), email, "irrelevant-hash-for-this-test");
+                "Test", "User", "DOC-" + uniqueId(), email, TestPasswords.UNUSABLE_BCRYPT_HASH);
         return linkRole(email, role);
     }
 
