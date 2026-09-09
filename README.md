@@ -32,7 +32,7 @@ El servicio se configura mediante variables de entorno, con valores por defecto 
 | `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` | Minutos de vigencia del access token | `15` |
 | `JWT_REFRESH_TOKEN_EXPIRATION_DAYS` | Días de vigencia del refresh token | `7` |
 | `CORS_ALLOWED_ORIGINS` | Origen(es) permitidos para el frontend Next.js | `http://localhost:3000` |
-| `COOKIE_SECURE` | Marca `Secure` en las cookies de sesión; `false` solo para desarrollo local sin HTTPS | `true` |
+| `COOKIE_SECURE` | Marca `Secure` en las cookies de sesión; `false` solo si sirves por HTTP en una dirección distinta de `localhost` | `true` |
 
 ### De dónde salen esos valores
 
@@ -216,7 +216,7 @@ Como el claim se calcula al emitir el token, un cambio de vínculo residencial s
 cp .env.example .env
 ```
 
-Ese mismo archivo configura PostgreSQL y la aplicación, así que revísalo antes de seguir: cambia `JWT_SECRET` por un valor propio y deja `COOKIE_SECURE=false`, que es lo que permite iniciar sesión en local sin HTTPS.
+Ese mismo archivo configura PostgreSQL y la aplicación, así que revísalo antes de seguir: lo único que hay que cambiar es `JWT_SECRET`, por un valor propio de al menos 32 caracteres.
 
 Flyway crea y evoluciona el esquema automáticamente al arrancar. Hibernate está configurado con `ddl-auto=validate`: valida las entidades, pero nunca crea ni modifica tablas.
 
