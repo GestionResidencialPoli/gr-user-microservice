@@ -20,7 +20,7 @@ Microservicio de usuarios y autenticación de la plataforma de Gestión Residenc
 
 ## Configuración
 
-El servicio se conecta a PostgreSQL mediante variables de entorno, con valores por defecto pensados para un ambiente local. Las variables disponibles están documentadas en [`.env.example`](.env.example):
+El servicio se configura mediante variables de entorno, con valores por defecto pensados para un ambiente local. Las variables disponibles están documentadas en [`.env.example`](.env.example):
 
 | Variable      | Descripción                       | Valor por defecto                             |
 |---------------|------------------------------------|------------------------------------------------|
@@ -33,6 +33,27 @@ El servicio se conecta a PostgreSQL mediante variables de entorno, con valores p
 | `JWT_REFRESH_TOKEN_EXPIRATION_DAYS` | Días de vigencia del refresh token | `7` |
 | `CORS_ALLOWED_ORIGINS` | Origen(es) permitidos para el frontend Next.js | `http://localhost:3000` |
 | `COOKIE_SECURE` | Marca `Secure` en las cookies de sesión; `false` solo para desarrollo local sin HTTPS | `true` |
+
+### De dónde salen esos valores
+
+`application.properties` declara **qué** se puede configurar y con qué valor por defecto; nunca contiene secretos, porque está versionado. Los valores que cambian por entorno, y los que no pueden publicarse, llegan de afuera.
+
+En local eso es el archivo `.env`, que está en `.gitignore`. Lo leen dos programas por motivos distintos:
+
+- **Docker Compose** lo abre por convención propia, sin que nadie se lo pida, para las variables de PostgreSQL.
+- **Spring Boot** no abre ningún `.env` por su cuenta. Lo hace porque `application-dev.properties` se lo ordena:
+
+  ```properties
+  spring.config.import=optional:file:./.env[.properties]
+  ```
+
+  `[.properties]` indica que ese archivo sin extensión se interprete en formato `clave=valor`, y `optional:` que no falle si no existe.
+
+Que la instrucción viva en `application-dev.properties` y no en `application.properties` acota el alcance a lo que se busca: `./mvnw spring-boot:run` activa el perfil `dev` y lee el archivo, mientras que las pruebas (perfil `test`) y el jar empaquetado no lo activan y nunca lo tocan. Así el `.env` de una máquina no puede alterar el resultado de las pruebas de nadie.
+
+En cualquier entorno desplegado no hay `.env`: la configuración llega por variables de entorno reales, que además tienen más precedencia que este archivo.
+
+`JWT_SECRET` es la única variable sin valor por defecto, y es deliberado. Un secreto con valor por defecto termina algún día en producción sin que nadie se dé cuenta; sin él, arrancar mal es imposible. `JwtProperties` valida además que tenga al menos 32 caracteres, que es lo que exige HMAC-SHA256.
 
 ### Autenticación por cookies
 
@@ -195,6 +216,8 @@ Como el claim se calcula al emitir el token, un cambio de vínculo residencial s
 cp .env.example .env
 ```
 
+Ese mismo archivo configura PostgreSQL y la aplicación, así que revísalo antes de seguir: cambia `JWT_SECRET` por un valor propio y deja `COOKIE_SECURE=false`, que es lo que permite iniciar sesión en local sin HTTPS.
+
 Flyway crea y evoluciona el esquema automáticamente al arrancar. Hibernate está configurado con `ddl-auto=validate`: valida las entidades, pero nunca crea ni modifica tablas.
 
 En PowerShell:
@@ -234,11 +257,11 @@ docker compose down -v
 ./mvnw spring-boot:run
 ```
 
-El servicio queda disponible en `http://localhost:8080`.
+El servicio queda disponible en `http://localhost:8080`. No hay que exportar nada en la terminal: con el `.env` creado en el paso anterior, el perfil `dev` lo carga solo.
 
 En el primer arranque contra este PostgreSQL vacío, Flyway creará el esquema automáticamente. No se deben ejecutar scripts SQL manuales para crear tablas.
 
-`./mvnw spring-boot:run` activa por defecto el perfil `dev` (configurado en el `spring-boot-maven-plugin` del `pom.xml`), que además de crear el esquema carga los **datos semilla** descritos abajo. El jar empaquetado (el que corre en cualquier otro entorno, incluida producción) no activa ningún perfil por su cuenta: los datos semilla solo existen si alguien pide explícitamente el perfil `dev`.
+`./mvnw spring-boot:run` activa por defecto el perfil `dev` (configurado en el `spring-boot-maven-plugin` del `pom.xml`), que además de crear el esquema y leer el `.env` carga los **datos semilla** descritos abajo. El jar empaquetado (el que corre en cualquier otro entorno, incluida producción) no activa ningún perfil por su cuenta: los datos semilla solo existen si alguien pide explícitamente el perfil `dev`.
 
 ### Datos semilla para desarrollo, pruebas y demostración
 

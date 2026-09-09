@@ -1,8 +1,8 @@
 package com.uni.usermicroservice.security;
 
 import com.uni.usermicroservice.UserMicroserviceApplication;
-import io.jsonwebtoken.security.WeakKeyException;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.bind.validation.BindValidationException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -34,9 +34,10 @@ class JwtSecretRequiredAtStartupIT {
                             "--spring.datasource.password=" + POSTGRES.getPassword(),
                             "--spring.main.banner-mode=off"
                     )) {
-                // El contexto no debe llegar a iniciar sin JWT_SECRET: la clave termina siendo
-                // demasiado corta para HMAC-SHA y JwtTokenProvider falla al construirse.
+                throw new IllegalStateException("El contexto no debia iniciar sin JWT_SECRET");
             }
-        }).hasRootCauseInstanceOf(WeakKeyException.class);
+        })
+                .hasRootCauseInstanceOf(BindValidationException.class)
+                .hasStackTraceContaining("jwt.secret debe tener al menos 32 caracteres");
     }
 }
