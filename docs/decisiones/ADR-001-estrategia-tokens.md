@@ -27,6 +27,8 @@ El refresh token nunca se guarda en texto plano: se persiste su hash SHA-256 en 
 
 Esto ya está implementado en GR-47: `AuthTokenService`, migración `V2__create_refresh_tokens.sql`, `POST /api/v1/auth/refresh` y `POST /api/v1/auth/logout`.
 
+Para el acceso desde la aplicación de Administración se admite un puente SSO limitado, no la transferencia de cookies ni de JWT entre aplicaciones: un administrador autenticado solicita `POST /api/v1/auth/admin-sso/code` y recibe un código opaco aleatorio. La migración `V6__create_admin_sso_codes.sql` persiste únicamente su hash SHA-256, usuario, audiencia `admin`, vencimiento de 60 segundos y consumo. El Admin lo canjea una sola vez en `POST /api/v1/auth/admin-sso/exchange`; ese endpoint vuelve a usar `AuthTokenService.issueTokens(...)`, por lo que conserva las mismas cookies y políticas de sesión. El canje exige CSRF y se protege contra doble uso mediante bloqueo pesimista en PostgreSQL.
+
 ## Por qué no las otras alternativas
 
 - **Alternativa 1** se descarta porque no resuelve la exigencia real de HU-1.5/1.6: aceptar hasta 15 minutos de ventana de exposición tras desactivar a un vigilante que hoy opera el control de acceso físico no es un riesgo aceptable para este dominio.
@@ -38,6 +40,7 @@ Esto ya está implementado en GR-47: `AuthTokenService`, migración `V2__create_
 - El access token expirado dentro de una ventana de 15 minutos es la única exposición residual tras revocar una sesión; se considera aceptable para el alcance actual (Módulo 1, una sola réplica).
 - "Cerrar sesión" en el cliente ya no es solo "borrar el token": `POST /api/v1/auth/logout` debe llamarse siempre para revocar el refresh token en servidor; si el cliente solo descarta las cookies sin llamar al endpoint, el refresh token sigue activo hasta expirar.
 - GR-40 (login) debe emitir los tokens llamando a `AuthTokenService.issueTokens(...)` después de validar credenciales, no debe crear un mecanismo de emisión paralelo.
+- El SSO del Admin tampoco crea un emisor paralelo: solo convierte una credencial opaca de corta vida en las cookies habituales. El código no se registra, no se incluye en errores y no es reutilizable.
 - GR-48 (BCrypt) es independiente de esta decisión: BCrypt protege `password_hash`, esta decisión protege la sesión posterior al login.
 - Cuando el backend pase a correr con varias réplicas, la tabla `refresh_tokens` ya funciona sin cambios (es la fuente de verdad compartida vía PostgreSQL). Si la latencia de esa consulta en `/refresh` se vuelve un problema, la evolución natural es cachear el estado "revocado" en Redis (alternativa 4) solo para ese path, sin tocar el contrato de cookies ni el resto del backend.
 - Al dividir el sistema en microservicios, `refresh_tokens` y `AuthTokenService` se mudan junto con el futuro servicio de identidad; los demás servicios solo necesitan poder validar la firma del access token (secreto compartido o JWKS), no conocer el refresh token en absoluto.
