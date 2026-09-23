@@ -30,7 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "jwt.secret=a-secret-of-at-least-32-characters-long",
                 "jwt.access-token-expiration-minutes=15",
                 "jwt.refresh-token-expiration-days=7",
-                "app.cors.allowed-origins=http://localhost:3000"
+                "app.cors.allowed-origins=http://localhost:3000",
+                "internal.service.token=a-secret-of-at-least-32-characters-long"
         }
 )
 class PasswordResetAcceptanceCriteriaIT {
