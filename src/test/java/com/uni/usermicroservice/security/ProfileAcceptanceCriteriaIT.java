@@ -29,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "jwt.secret=a-secret-of-at-least-32-characters-long",
                 "jwt.access-token-expiration-minutes=15",
                 "jwt.refresh-token-expiration-days=7",
-                "app.cors.allowed-origins=http://localhost:3000"
+                "app.cors.allowed-origins=http://localhost:3000",
+                "internal.service.token=a-secret-of-at-least-32-characters-long"
         }
 )
 class ProfileAcceptanceCriteriaIT {
@@ -185,6 +186,27 @@ class ProfileAcceptanceCriteriaIT {
                 .expectStatus().isOk()
                 .expectBody(MeResponse.class)
                 .value(body -> assertThat(body.phone()).isEqualTo("3011234567"));
+    }
+
+    @Test
+    void ca6_updatingMyPhoneWithAnInvalidFormatIsRejected() {
+        String email = "profile-ca6-" + uniqueId() + "@example.com";
+        Long userId = createUser(email);
+        String accessCookie = accessCookieFor(userId, email);
+        String csrf = fetchCsrfToken();
+
+        var response = client.patch().uri("/api/v1/auth/me")
+                .cookie(ACCESS_COOKIE, accessCookie)
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(new UpdateProfileRequest("not-a-phone"))
+                .exchange();
+
+        response.expectStatus().isEqualTo(HttpStatus.BAD_REQUEST);
+        response.expectBody(ApiError.class).value(body -> assertThat(body.message()).contains("10 digitos"));
+
+        String storedPhone = jdbcTemplate.queryForObject("SELECT phone FROM users WHERE id = ?", String.class, userId);
+        assertThat(storedPhone).isEqualTo("3000000000");
     }
 
     @Test
