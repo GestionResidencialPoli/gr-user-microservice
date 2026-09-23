@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,7 +21,7 @@ public class AuthController {
     private final ProfileService profileService;
     private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
-    private final AdminSsoService adminSsoService;
+    private final SsoService ssoService;
     private final CookieProperties cookieProperties;
 
     public AuthController(
@@ -30,14 +29,14 @@ public class AuthController {
             ProfileService profileService,
             PasswordResetService passwordResetService,
             AuthTokenService authTokenService,
-            AdminSsoService adminSsoService,
+            SsoService ssoService,
             CookieProperties cookieProperties
     ) {
         this.authenticationService = authenticationService;
         this.profileService = profileService;
         this.passwordResetService = passwordResetService;
         this.authTokenService = authTokenService;
-        this.adminSsoService = adminSsoService;
+        this.ssoService = ssoService;
         this.cookieProperties = cookieProperties;
     }
 
@@ -120,19 +119,29 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/admin-sso/code")
-    @PreAuthorize("hasRole('ADMINISTRACION')")
-    public AdminSsoCodeResponse issueAdminSsoCode(Authentication authentication) {
-        return adminSsoService.issueCode(authentication.getName());
+    @PostMapping("/sso/code")
+    public ResponseEntity<SsoCodeResponse> issueSsoCode(
+            Authentication authentication,
+            @Valid @RequestBody SsoCodeRequest request
+    ) {
+        try {
+            return ResponseEntity.ok(ssoService.issueCode(authentication.getName(), request.audience()));
+        } catch (SsoAudienceUnknownException exception) {
+            return ResponseEntity.badRequest().build();
+        } catch (SsoForbiddenException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (SsoCodeInvalidException exception) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 
-    @PostMapping("/admin-sso/exchange")
-    public ResponseEntity<Void> exchangeAdminSsoCode(@Valid @RequestBody AdminSsoExchangeRequest request) {
+    @PostMapping("/sso/exchange")
+    public ResponseEntity<Void> exchangeSsoCode(@Valid @RequestBody SsoExchangeRequest request) {
         try {
-            return withTokenCookies(adminSsoService.exchange(request.code()));
-        } catch (AdminSsoForbiddenException exception) {
+            return withTokenCookies(ssoService.exchange(request.code()));
+        } catch (SsoForbiddenException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (AdminSsoCodeInvalidException exception) {
+        } catch (SsoCodeInvalidException exception) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }

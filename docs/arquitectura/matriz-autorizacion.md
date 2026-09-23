@@ -27,8 +27,8 @@ Son la excepción prevista por el criterio de aceptación: sin ellos nadie podr�
 | `POST` | `/api/v1/auth/password-reset` | 🔓 | Responde `202` exista o no el correo |
 | `POST` | `/api/v1/auth/password-reset/confirm` | 🔓 | El token de un solo uso es la credencial |
 | `GET` | `/api/v1/auth/csrf` | 🔓 | Inicializa o devuelve la cookie `XSRF-TOKEN` legible por JavaScript |
-| `POST` | `/api/v1/auth/admin-sso/code` | ✅ solo `ADMINISTRACION` | Emite un código opaco de un solo uso, con vigencia de 60 segundos y audiencia `admin` |
-| `POST` | `/api/v1/auth/admin-sso/exchange` | 🔓 | Canjea un código SSO válido por las cookies `access_token` y `refresh_token` |
+| `POST` | `/api/v1/auth/sso/code` | ✅ los tres roles, según la audiencia pedida | Emite un código opaco de un solo uso, con vigencia de 60 segundos, solo si el rol del solicitante corresponde a la audiencia (`admin`→`ADMINISTRACION`, `residente`→`RESIDENTE`, `vigilante`→`VIGILANTE`). `403` si no corresponde, `400` si la audiencia no existe |
+| `POST` | `/api/v1/auth/sso/exchange` | 🔓 | Canjea un código SSO válido por las cookies `access_token` y `refresh_token`. Revalida en ese momento que el rol del dueño del código siga correspondiendo a su audiencia |
 
 Aunque sean públicos, todos exigen el encabezado `X-XSRF-TOKEN` por ser mutaciones.
 

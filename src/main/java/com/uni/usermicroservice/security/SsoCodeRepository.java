@@ -8,9 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface AdminSsoCodeRepository extends JpaRepository<AdminSsoCode, Long> {
+public interface SsoCodeRepository extends JpaRepository<SsoCode, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select code from AdminSsoCode code join fetch code.user where code.codeHash = :codeHash")
-    Optional<AdminSsoCode> findByCodeHashForUpdate(@Param("codeHash") String codeHash);
+    @Query("select code from SsoCode code join fetch code.user where code.codeHash = :codeHash")
+    Optional<SsoCode> findByCodeHashForUpdate(@Param("codeHash") String codeHash);
 }
