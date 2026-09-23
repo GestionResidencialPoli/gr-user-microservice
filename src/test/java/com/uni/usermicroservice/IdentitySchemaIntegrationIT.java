@@ -27,7 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Testcontainers
 @SpringBootTest(properties = {
         "spring.jpa.show-sql=false",
-        "jwt.secret=a-secret-of-at-least-32-characters-long"
+        "jwt.secret=a-secret-of-at-least-32-characters-long",
+        "internal.service.token=a-secret-of-at-least-32-characters-long"
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class IdentitySchemaIntegrationIT {
@@ -66,10 +67,11 @@ class IdentitySchemaIntegrationIT {
                 "owners",
                 "tenants",
                 "refresh_tokens",
-                "password_reset_tokens"
+                "password_reset_tokens",
+                "admin_sso_codes"
         );
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("5");
+        assertThat(flyway.info().current().getVersion().toString()).isEqualTo("6");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM roles", Integer.class))
                 .isEqualTo(3);
     }
@@ -128,7 +130,8 @@ class IdentitySchemaIntegrationIT {
                             "--spring.flyway.enabled=false",
                             "--spring.jpa.hibernate.ddl-auto=validate",
                             "--spring.main.banner-mode=off",
-                            "--jwt.secret=a-secret-of-at-least-32-characters-long"
+                            "--jwt.secret=a-secret-of-at-least-32-characters-long",
+                            "--internal.service.token=a-secret-of-at-least-32-characters-long"
                     )) {
                 // El contexto no debe llegar a iniciar.
             }
