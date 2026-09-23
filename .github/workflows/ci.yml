@@ -46,9 +46,11 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Levantar Postgres para la prueba de arranque
+        env:
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
         run: |
           docker run -d --name postgres-smoke \
-            -e POSTGRES_DB=gr_user_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=gr_user_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD="$CI_DB_PASSWORD" \
             -p 5432:5432 postgres:16-alpine
           for i in $(seq 1 30); do
             docker exec postgres-smoke pg_isready -U postgres -d gr_user_db && break
@@ -56,13 +58,17 @@ jobs:
           done
 
       - name: Arrancar el contenedor y validar /actuator/health
+        env:
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          CI_JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+          CI_INTERNAL_SERVICE_TOKEN: ${{ secrets.CI_INTERNAL_SERVICE_TOKEN }}
         run: |
           docker run -d --name app-smoke \
             --network host \
             -e DB_URL=jdbc:postgresql://localhost:5432/gr_user_db \
-            -e DB_USERNAME=postgres -e DB_PASSWORD=postgres \
-            -e JWT_SECRET=ci-secreto-de-al-menos-32-caracteres-para-pruebas \
-            -e INTERNAL_SERVICE_TOKEN=ci-secreto-de-al-menos-32-caracteres-para-pruebas \
+            -e DB_USERNAME=postgres -e DB_PASSWORD="$CI_DB_PASSWORD" \
+            -e JWT_SECRET="$CI_JWT_SECRET" \
+            -e INTERNAL_SERVICE_TOKEN="$CI_INTERNAL_SERVICE_TOKEN" \
             gr-user-microservice:ci
 
           for i in $(seq 1 30); do
