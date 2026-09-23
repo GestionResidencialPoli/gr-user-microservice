@@ -72,9 +72,9 @@ Endpoints disponibles:
 - `POST /api/v1/auth/logout`: revoca el refresh token en base de datos y limpia ambas cookies.
 - `POST /api/v1/auth/password-reset`: solicita el restablecimiento indicando `{ email }`. Responde `202` **siempre**, exista o no el correo.
 - `POST /api/v1/auth/password-reset/confirm`: recibe `{ token, newPassword }`, actualiza la contraseña y consume el token.
-- `GET /api/v1/auth/csrf`: inicializa o devuelve la cookie `XSRF-TOKEN` para que el Admin pueda enviar el encabezado CSRF.
-- `POST /api/v1/auth/admin-sso/code`: para una sesión `ADMINISTRACION`, devuelve `{ code }` opaco, de un solo uso y con vigencia de 60 segundos. No devuelve tokens.
-- `POST /api/v1/auth/admin-sso/exchange`: recibe `{ code }` y, con `X-XSRF-TOKEN`, emite las cookies habituales `access_token` y `refresh_token`. El proxy de producción del Admin debe conservar todos los encabezados `Set-Cookie` y no fijar un `Domain` distinto del host público del Admin.
+- `GET /api/v1/auth/csrf`: inicializa o devuelve la cookie `XSRF-TOKEN` para que otra aplicación de rol pueda enviar el encabezado CSRF.
+- `POST /api/v1/auth/sso/code`: recibe `{ audience }` (`admin`, `residente` o `vigilante`). Si el rol de la sesión autenticada corresponde a esa audiencia, devuelve `{ code }` opaco, de un solo uso y con vigencia de 60 segundos; no devuelve tokens. Responde `403` si el rol no corresponde a la audiencia pedida, `400` si la audiencia no existe.
+- `POST /api/v1/auth/sso/exchange`: recibe `{ code }` y, con `X-XSRF-TOKEN`, emite las cookies habituales `access_token` y `refresh_token`. El proxy de producción de cada aplicación de rol debe conservar todos los encabezados `Set-Cookie` y no fijar un `Domain` distinto de su propio host público.
 
 Al usar cookies, las peticiones que cambian estado (`POST`, `PUT`, `PATCH`, `DELETE`) requieren protección CSRF: el servidor expone una cookie legible `XSRF-TOKEN` que el frontend debe reenviar en el encabezado `X-XSRF-TOKEN`. El frontend debe además llamar con `credentials: "include"` para que el navegador envíe las cookies en peticiones cross-origin.
 

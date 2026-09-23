@@ -109,7 +109,7 @@ public class SecurityConfig {
                                 AUTH_BASE_PATH + "/logout",
                                 AUTH_BASE_PATH + "/password-reset",
                                 AUTH_BASE_PATH + "/password-reset/confirm",
-                                AUTH_BASE_PATH + "/admin-sso/exchange"
+                                AUTH_BASE_PATH + "/sso/exchange"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)

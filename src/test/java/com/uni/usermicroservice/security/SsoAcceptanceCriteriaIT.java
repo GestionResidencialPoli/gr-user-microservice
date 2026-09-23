@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "app.cors.allowed-origins=http://localhost:3000"
         }
 )
-class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
+class SsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
 
     private static final String ACCESS_COOKIE = "access_token";
     private static final String CSRF_COOKIE = "XSRF-TOKEN";
@@ -53,7 +53,7 @@ class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
     void validCodeCreatesTheExpectedCookiesAndCannotBeExchangedTwice() {
         var tokens = tokensFor("sso-admin@example.com", "ADMINISTRACION");
         String csrf = fetchCsrfToken();
-        String code = issueCode(tokens.accessCookie().getValue(), csrf);
+        String code = issueCode(tokens.accessCookie().getValue(), "admin", csrf);
 
         var result = exchange(code, csrf)
                 .expectStatus().isOk()
@@ -67,18 +67,59 @@ class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void eachRoleCanObtainAndExchangeACodeForItsOwnAudience() {
+        var resident = tokensFor("sso-resident-own@example.com", "RESIDENTE");
+        String residentCsrf = fetchCsrfToken();
+        String residentCode = issueCode(resident.accessCookie().getValue(), "residente", residentCsrf);
+        exchange(residentCode, residentCsrf).expectStatus().isOk();
+
+        var guard = tokensFor("sso-guard-own@example.com", "VIGILANTE");
+        String guardCsrf = fetchCsrfToken();
+        String guardCode = issueCode(guard.accessCookie().getValue(), "vigilante", guardCsrf);
+        exchange(guardCode, guardCsrf).expectStatus().isOk();
+    }
+
+    @Test
+    void requestingAnAudienceThatDoesNotMatchTheCallerRoleIsForbidden() {
+        var resident = tokensFor("sso-resident-mismatch@example.com", "RESIDENTE");
+        String csrf = fetchCsrfToken();
+
+        client.post().uri("/api/v1/auth/sso/code")
+                .cookie(ACCESS_COOKIE, resident.accessCookie().getValue())
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(new SsoCodeRequest("admin"))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void requestingAnUnknownAudienceIsRejectedAsBadRequest() {
+        var resident = tokensFor("sso-unknown-audience@example.com", "RESIDENTE");
+        String csrf = fetchCsrfToken();
+
+        client.post().uri("/api/v1/auth/sso/code")
+                .cookie(ACCESS_COOKIE, resident.accessCookie().getValue())
+                .cookie(CSRF_COOKIE, csrf)
+                .header(CSRF_HEADER, csrf)
+                .body(new SsoCodeRequest("no-existe"))
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
     void expiredOrWrongAudienceCodeIsRejected() {
         Long userId = insertUser("sso-expired@example.com", "ADMINISTRACION");
         String csrf = fetchCsrfToken();
         insertCode("expired-code", userId, "admin", Instant.now().minusSeconds(1));
-        insertCode("other-audience-code", userId, "resident", Instant.now().plusSeconds(60));
+        insertCode("unknown-audience-code", userId, "no-existe", Instant.now().plusSeconds(60));
 
         exchange("expired-code", csrf).expectStatus().isUnauthorized();
-        exchange("other-audience-code", csrf).expectStatus().isUnauthorized();
+        exchange("unknown-audience-code", csrf).expectStatus().isForbidden();
     }
 
     @Test
-    void codeForAUserWithoutAdministrationRoleIsForbidden() {
+    void codeForAUserWithoutTheRequiredRoleIsForbiddenAtExchange() {
         Long userId = insertUser("sso-resident@example.com", "RESIDENTE");
         String csrf = fetchCsrfToken();
         insertCode("resident-code", userId, "admin", Instant.now().plusSeconds(60));
@@ -87,40 +128,42 @@ class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void codeIssuanceRequiresAdministrationAndExchangeRequiresCsrf() {
-        var resident = tokensFor("sso-issuer-resident@example.com", "RESIDENTE");
+    void codeIssuanceRequiresAuthenticationAndExchangeRequiresCsrf() {
+        // Con CSRF valido pero sin cookie de sesion: el filtro de CSRF deja
+        // pasar la peticion y es la falta de autenticacion la que responde.
         String csrf = fetchCsrfToken();
-        client.post().uri("/api/v1/auth/admin-sso/code")
-                .cookie(ACCESS_COOKIE, resident.accessCookie().getValue())
+        client.post().uri("/api/v1/auth/sso/code")
                 .cookie(CSRF_COOKIE, csrf)
                 .header(CSRF_HEADER, csrf)
+                .body(new SsoCodeRequest("admin"))
                 .exchange()
-                .expectStatus().isForbidden();
+                .expectStatus().isUnauthorized();
 
         Long userId = insertUser("sso-csrf@example.com", "ADMINISTRACION");
         insertCode("csrf-code", userId, "admin", Instant.now().plusSeconds(60));
-        client.post().uri("/api/v1/auth/admin-sso/exchange")
-                .body(new AdminSsoExchangeRequest("csrf-code"))
+        client.post().uri("/api/v1/auth/sso/exchange")
+                .body(new SsoExchangeRequest("csrf-code"))
                 .exchange()
                 .expectStatus().isForbidden();
     }
 
-    private String issueCode(String accessToken, String csrf) {
-        return client.post().uri("/api/v1/auth/admin-sso/code")
+    private String issueCode(String accessToken, String audience, String csrf) {
+        return client.post().uri("/api/v1/auth/sso/code")
                 .cookie(ACCESS_COOKIE, accessToken)
                 .cookie(CSRF_COOKIE, csrf)
                 .header(CSRF_HEADER, csrf)
+                .body(new SsoCodeRequest(audience))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(AdminSsoCodeResponse.class)
+                .expectBody(SsoCodeResponse.class)
                 .returnResult().getResponseBody().code();
     }
 
     private RestTestClient.ResponseSpec exchange(String code, String csrf) {
-        return client.post().uri("/api/v1/auth/admin-sso/exchange")
+        return client.post().uri("/api/v1/auth/sso/exchange")
                 .cookie(CSRF_COOKIE, csrf)
                 .header(CSRF_HEADER, csrf)
-                .body(new AdminSsoExchangeRequest(code))
+                .body(new SsoExchangeRequest(code))
                 .exchange();
     }
 
