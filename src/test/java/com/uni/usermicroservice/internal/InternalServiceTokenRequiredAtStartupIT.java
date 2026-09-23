@@ -1,4 +1,4 @@
-package com.uni.usermicroservice.security;
+package com.uni.usermicroservice.internal;
 
 import com.uni.usermicroservice.UserMicroserviceApplication;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
-class JwtSecretRequiredAtStartupIT {
+class InternalServiceTokenRequiredAtStartupIT {
 
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine")
@@ -22,7 +22,7 @@ class JwtSecretRequiredAtStartupIT {
             .withPassword("gr_user");
 
     @Test
-    void applicationFailsToStartWithoutAJwtSecret() {
+    void applicationFailsToStartWithoutAnInternalServiceToken() {
         assertThatThrownBy(() -> {
             try (ConfigurableApplicationContext ignored = new SpringApplicationBuilder(
                     UserMicroserviceApplication.class
@@ -33,12 +33,12 @@ class JwtSecretRequiredAtStartupIT {
                             "--spring.datasource.username=" + POSTGRES.getUsername(),
                             "--spring.datasource.password=" + POSTGRES.getPassword(),
                             "--spring.main.banner-mode=off",
-                            "--internal.service.token=a-secret-of-at-least-32-characters-long"
+                            "--jwt.secret=a-secret-of-at-least-32-characters-long"
                     )) {
-                throw new IllegalStateException("El contexto no debia iniciar sin JWT_SECRET");
+                throw new IllegalStateException("El contexto no debia iniciar sin INTERNAL_SERVICE_TOKEN");
             }
         })
                 .hasRootCauseInstanceOf(BindValidationException.class)
-                .hasStackTraceContaining("jwt.secret debe tener al menos 32 caracteres");
+                .hasStackTraceContaining("internal.service.token debe tener al menos 32 caracteres");
     }
 }

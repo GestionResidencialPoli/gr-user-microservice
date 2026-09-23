@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 
@@ -136,7 +137,7 @@ class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
     private Long insertUser(String email, String role) {
         jdbcTemplate.update(
                 "INSERT INTO users (first_name, last_name, document_number, email, password_hash) VALUES (?, ?, ?, ?, ?)",
-                "Test", "User", "DOC-" + email, email, TestPasswords.UNUSABLE_BCRYPT_HASH);
+                "Test", "User", "DOC-" + Long.toString(System.nanoTime(), 36), email, TestPasswords.UNUSABLE_BCRYPT_HASH);
         Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE email = ?", Long.class, email);
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, role);
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
@@ -146,6 +147,6 @@ class AdminSsoAcceptanceCriteriaIT extends AbstractIntegrationTest {
     private void insertCode(String rawCode, Long userId, String audience, Instant expiresAt) {
         jdbcTemplate.update(
                 "INSERT INTO admin_sso_codes (user_id, code_hash, audience, expires_at, created_at) VALUES (?, ?, ?, ?, ?)",
-                userId, AuthTokenService.hash(rawCode), audience, expiresAt, expiresAt.minusSeconds(60));
+                userId, AuthTokenService.hash(rawCode), audience, Timestamp.from(expiresAt), Timestamp.from(expiresAt.minusSeconds(60)));
     }
 }
