@@ -315,3 +315,4 @@ El modelo entidad-relación y sus decisiones están publicados en [`docs/arquite
 ## Flujo de trabajo
 
 Este repositorio sigue el flujo de ramas `feature/* → develop → qa → release/* → main` (con `hotfix/*` directo a `main`) y la convención de commits `tipo(scope): GR-000 descripcion-breve`, según el lineamiento oficial del proyecto.
+
