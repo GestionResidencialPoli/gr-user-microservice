@@ -99,6 +99,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, AUTH_BASE_PATH + "/csrf").permitAll()
                         .requestMatchers(INTERNAL_BASE_PATH + "/**").permitAll()
                         .requestMatchers(
