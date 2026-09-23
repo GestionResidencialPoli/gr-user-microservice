@@ -29,26 +29,33 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
+import com.uni.usermicroservice.internal.InternalServiceProperties;
+import com.uni.usermicroservice.internal.InternalServiceTokenFilter;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, CookieProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, CookieProperties.class, InternalServiceProperties.class})
 public class SecurityConfig {
 
     private static final String AUTH_BASE_PATH = "/api/v1/auth";
+    private static final String INTERNAL_BASE_PATH = "/api/v1/internal";
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalServiceTokenFilter internalServiceTokenFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final List<String> corsAllowedOrigins;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            InternalServiceTokenFilter internalServiceTokenFilter,
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler,
             @Value("${app.cors.allowed-origins}") List<String> corsAllowedOrigins
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.internalServiceTokenFilter = internalServiceTokenFilter;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
         this.corsAllowedOrigins = corsAllowedOrigins;
@@ -79,7 +86,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(statelessCsrfTokenRepository())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .ignoringRequestMatchers(INTERNAL_BASE_PATH + "/**"))
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -92,6 +100,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, AUTH_BASE_PATH + "/csrf").permitAll()
+                        .requestMatchers(INTERNAL_BASE_PATH + "/**").permitAll()
                         .requestMatchers(
                                 HttpMethod.POST,
                                 AUTH_BASE_PATH + "/login",
@@ -102,6 +111,7 @@ public class SecurityConfig {
                                 AUTH_BASE_PATH + "/admin-sso/exchange"
                         ).permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
