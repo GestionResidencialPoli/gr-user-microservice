@@ -99,6 +99,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, AUTH_BASE_PATH + "/csrf").permitAll()
                         .requestMatchers(INTERNAL_BASE_PATH + "/**").permitAll()
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -106,7 +107,8 @@ public class SecurityConfig {
                                 AUTH_BASE_PATH + "/refresh",
                                 AUTH_BASE_PATH + "/logout",
                                 AUTH_BASE_PATH + "/password-reset",
-                                AUTH_BASE_PATH + "/password-reset/confirm"
+                                AUTH_BASE_PATH + "/password-reset/confirm",
+                                AUTH_BASE_PATH + "/admin-sso/exchange"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)

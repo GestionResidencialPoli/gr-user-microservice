@@ -26,6 +26,9 @@ Son la excepción prevista por el criterio de aceptación: sin ellos nadie podr�
 | `POST` | `/api/v1/auth/logout` | 🔓 | Idempotente |
 | `POST` | `/api/v1/auth/password-reset` | 🔓 | Responde `202` exista o no el correo |
 | `POST` | `/api/v1/auth/password-reset/confirm` | 🔓 | El token de un solo uso es la credencial |
+| `GET` | `/api/v1/auth/csrf` | 🔓 | Inicializa o devuelve la cookie `XSRF-TOKEN` legible por JavaScript |
+| `POST` | `/api/v1/auth/admin-sso/code` | ✅ solo `ADMINISTRACION` | Emite un código opaco de un solo uso, con vigencia de 60 segundos y audiencia `admin` |
+| `POST` | `/api/v1/auth/admin-sso/exchange` | 🔓 | Canjea un código SSO válido por las cookies `access_token` y `refresh_token` |
 
 Aunque sean públicos, todos exigen el encabezado `X-XSRF-TOKEN` por ser mutaciones.
 

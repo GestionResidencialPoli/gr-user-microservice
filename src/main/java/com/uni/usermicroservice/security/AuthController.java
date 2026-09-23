@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,6 +22,7 @@ public class AuthController {
     private final ProfileService profileService;
     private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
+    private final AdminSsoService adminSsoService;
     private final CookieProperties cookieProperties;
 
     public AuthController(
@@ -28,12 +30,14 @@ public class AuthController {
             ProfileService profileService,
             PasswordResetService passwordResetService,
             AuthTokenService authTokenService,
+            AdminSsoService adminSsoService,
             CookieProperties cookieProperties
     ) {
         this.authenticationService = authenticationService;
         this.profileService = profileService;
         this.passwordResetService = passwordResetService;
         this.authTokenService = authTokenService;
+        this.adminSsoService = adminSsoService;
         this.cookieProperties = cookieProperties;
     }
 
@@ -109,6 +113,28 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, authTokenService.clearedAccessCookie().toString())
                 .header(HttpHeaders.SET_COOKIE, authTokenService.clearedRefreshCookie().toString())
                 .build();
+    }
+
+    @GetMapping("/csrf")
+    public ResponseEntity<Void> csrf() {
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/admin-sso/code")
+    @PreAuthorize("hasRole('ADMINISTRACION')")
+    public AdminSsoCodeResponse issueAdminSsoCode(Authentication authentication) {
+        return adminSsoService.issueCode(authentication.getName());
+    }
+
+    @PostMapping("/admin-sso/exchange")
+    public ResponseEntity<Void> exchangeAdminSsoCode(@Valid @RequestBody AdminSsoExchangeRequest request) {
+        try {
+            return withTokenCookies(adminSsoService.exchange(request.code()));
+        } catch (AdminSsoForbiddenException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (AdminSsoCodeInvalidException exception) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 
     private ResponseEntity<Void> withTokenCookies(AuthTokenService.IssuedTokens tokens) {
