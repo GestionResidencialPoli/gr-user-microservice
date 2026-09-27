@@ -6,11 +6,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
 
     boolean existsByTorreAndNumero(String torre, String numero);
 
     boolean existsByTorreAndNumeroAndIdNot(String torre, String numero, Long id);
+
+    Optional<Apartment> findFirstByTorreIgnoreCaseAndNumeroIgnoreCaseOrderByIdAsc(String torre, String numero);
 
     @Query("""
             select a from Apartment a

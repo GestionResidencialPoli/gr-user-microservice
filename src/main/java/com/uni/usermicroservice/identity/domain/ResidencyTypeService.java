@@ -16,21 +16,30 @@ public class ResidencyTypeService {
         this.tenantRepository = tenantRepository;
     }
 
+    public record Residency(Apartment apartment, TipoResidente tipoResidente) {
+    }
+
     @Transactional(readOnly = true)
     public Optional<TipoResidente> tipoResidenteOf(Long userId) {
-        return apartmentOf(userId).map(ApartmentSummary::tipoResidente);
+        return residencyOf(userId).map(Residency::tipoResidente);
     }
 
     @Transactional(readOnly = true)
     public Optional<ApartmentSummary> apartmentOf(Long userId) {
-        return ownerRepository.findByUserId(userId).stream()
-                .findFirst()
-                .map(owner -> summaryOf(owner.getApartment(), TipoResidente.PROPIETARIO))
-                .or(() -> tenantRepository.findActiveByUserId(userId)
-                        .map(tenant -> summaryOf(tenant.getApartment(), TipoResidente.ARRENDATARIO)));
+        return residencyOf(userId).map(ResidencyTypeService::summaryOf);
     }
 
-    private ApartmentSummary summaryOf(Apartment apartment, TipoResidente tipoResidente) {
-        return new ApartmentSummary(apartment.getTorre(), apartment.getNumero(), tipoResidente);
+    @Transactional(readOnly = true)
+    public Optional<Residency> residencyOf(Long userId) {
+        return ownerRepository.findByUserId(userId).stream()
+                .findFirst()
+                .map(owner -> new Residency(owner.getApartment(), TipoResidente.PROPIETARIO))
+                .or(() -> tenantRepository.findActiveByUserId(userId)
+                        .map(tenant -> new Residency(tenant.getApartment(), TipoResidente.ARRENDATARIO)));
+    }
+
+    private static ApartmentSummary summaryOf(Residency residency) {
+        Apartment apartment = residency.apartment();
+        return new ApartmentSummary(apartment.getTorre(), apartment.getNumero(), residency.tipoResidente());
     }
 }

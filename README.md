@@ -211,6 +211,17 @@ El propósito es que los módulos financiero, de comunicaciones y de reservas di
 
 Como el claim se calcula al emitir el token, un cambio de vínculo residencial se refleja en la siguiente emisión. Un access token ya entregado conserva el valor anterior hasta expirar, dentro de la misma ventana descrita en `docs/decisiones/ADR-001-estrategia-tokens.md`.
 
+### API interna entre microservicios
+
+`/api/v1/internal/**` solo atiende llamadas servicio a servicio: exige el encabezado `X-Internal-Token` con el valor de `INTERNAL_SERVICE_TOKEN` y el gateway no la expone.
+
+| Método | Ruta | Respuesta | Consumidores |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/internal/users/{id}` | `{ id, firstName, lastName, apartment }`, donde `apartment` es `{ id, torre, numero, activo, tipoResidente }` o `null` | gr-wall-microservice (nombre del autor), gr-booking-microservice (apartamento del residente que reserva) |
+| `GET` | `/api/v1/internal/apartments?torre=&numero=` | `{ id, torre, numero, activo }` o `404`; ignora mayúsculas y espacios alrededor | gr-gate-microservice (apartamento de destino de una visita) |
+
+El apartamento de un usuario se resuelve con la misma precedencia del claim `tipoResidente`: la titularidad primero y, si no existe, el arrendamiento vigente.
+
 ### Levantar PostgreSQL con Docker Compose
 
 1. Copia el archivo de variables:
