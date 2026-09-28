@@ -15,14 +15,14 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
 
-@Pattern(regexp = "^$|^(3\\d{9}|60\\d{8})$", message = "el telefono debe tener 10 digitos: celular (3xx) o fijo nacional (60x)")
+@Pattern(regexp = "^\\s*[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}\\s*$", message = "el correo debe tener un dominio con extension, por ejemplo nombre@dominio.com")
 @Constraint(validatedBy = {})
 @Target({FIELD, METHOD, PARAMETER, ANNOTATION_TYPE, RECORD_COMPONENT})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface PhoneFormat {
+public @interface EmailFormat {
 
-    String message() default "el telefono debe tener 10 digitos: celular (3xx) o fijo nacional (60x)";
+    String message() default "el correo debe tener un dominio con extension, por ejemplo nombre@dominio.com";
 
     Class<?>[] groups() default {};
 

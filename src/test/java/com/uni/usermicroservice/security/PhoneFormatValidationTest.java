@@ -33,14 +33,14 @@ class PhoneFormatValidationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"3011234567", "", "0000000000"})
-    void acceptsAnEmptyOrExactlyTenDigitPhone(String phone) {
+    @ValueSource(strings = {"3011234567", "", "6014567890"})
+    void acceptsAnEmptyMobileOrNationalLandlinePhone(String phone) {
         assertThat(validator.validate(new UpdateProfileRequest(phone))).isEmpty();
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"301123456", "30112345678", "301-123-4567", "301abcd567", "+573011234567"})
-    void rejectsAPhoneThatIsNotExactlyTenDigits(String phone) {
+    @ValueSource(strings = {"301123456", "30112345678", "301-123-4567", "301abcd567", "+573011234567", "0000000000", "5011234567", "6112345678"})
+    void rejectsAPhoneThatIsNotAColombianMobileOrLandline(String phone) {
         Set<ConstraintViolation<UpdateProfileRequest>> violations = validator.validate(new UpdateProfileRequest(phone));
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("phone"));
     }
