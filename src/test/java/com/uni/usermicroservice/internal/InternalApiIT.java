@@ -17,7 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -117,9 +120,69 @@ class InternalApiIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void bothEndpointsRequireTheInternalToken() {
+    void allEndpointsRequireTheInternalToken() {
         client.get().uri("/api/v1/internal/users/1").exchange().expectStatus().isUnauthorized();
         client.get().uri("/api/v1/internal/apartments?torre=A&numero=101").exchange().expectStatus().isUnauthorized();
+        client.get().uri("/api/v1/internal/apartments/facturables").exchange().expectStatus().isUnauthorized();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void billableApartmentsIncludeCoefficientAndInactiveOnes() {
+        Apartment conCoeficienteNuevo = IdentityTestDataFactory.anApartment();
+        conCoeficienteNuevo.setCoeficienteCopropiedad(new BigDecimal("0.0250"));
+        Apartment activo = apartmentRepository.save(conCoeficienteNuevo);
+        Apartment inactivoNuevo = IdentityTestDataFactory.anApartment();
+        inactivoNuevo.setActivo(false);
+        Apartment inactivo = apartmentRepository.save(inactivoNuevo);
+
+        Map<String, Object> page = client.get()
+                .uri("/api/v1/internal/apartments/facturables?page=0&size=500")
+                .header(TOKEN_HEADER, INTERNAL_TOKEN)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map.class)
+                .returnResult()
+                .getResponseBody();
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) page.get("content");
+        Map<String, Object> conCoeficiente = content.stream()
+                .filter(item -> ((Number) item.get("id")).longValue() == activo.getId()).findFirst().orElseThrow();
+        Map<String, Object> desactivado = content.stream()
+                .filter(item -> ((Number) item.get("id")).longValue() == inactivo.getId()).findFirst().orElseThrow();
+
+        assertThat(new BigDecimal(conCoeficiente.get("coeficienteCopropiedad").toString())).isEqualByComparingTo("0.0250");
+        assertThat(conCoeficiente.get("activo")).isEqualTo(true);
+        assertThat(desactivado.get("activo")).isEqualTo(false);
+        assertThat(desactivado.get("coeficienteCopropiedad")).isNull();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void billableApartmentsArePagedWithACappedPageSize() {
+        apartmentRepository.save(IdentityTestDataFactory.anApartment());
+        apartmentRepository.save(IdentityTestDataFactory.anApartment());
+
+        Map<String, Object> page = client.get()
+                .uri("/api/v1/internal/apartments/facturables?page=0&size=1")
+                .header(TOKEN_HEADER, INTERNAL_TOKEN)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map.class)
+                .returnResult()
+                .getResponseBody();
+        Map<String, Object> capped = client.get()
+                .uri("/api/v1/internal/apartments/facturables?size=100000")
+                .header(TOKEN_HEADER, INTERNAL_TOKEN)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat((List<Object>) page.get("content")).hasSize(1);
+        assertThat(((Number) page.get("totalElements")).longValue()).isGreaterThanOrEqualTo(2);
+        assertThat(capped.get("size")).isEqualTo(500);
     }
 
     private InternalUserResponse getUser(Long id) {

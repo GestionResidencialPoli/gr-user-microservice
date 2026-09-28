@@ -219,6 +219,7 @@ Como el claim se calcula al emitir el token, un cambio de vínculo residencial s
 | --- | --- | --- | --- |
 | `GET` | `/api/v1/internal/users/{id}` | `{ id, firstName, lastName, apartment }`, donde `apartment` es `{ id, torre, numero, activo, tipoResidente }` o `null` | gr-wall-microservice (nombre del autor), gr-booking-microservice (apartamento del residente que reserva) |
 | `GET` | `/api/v1/internal/apartments?torre=&numero=` | `{ id, torre, numero, activo }` o `404`; ignora mayúsculas y espacios alrededor | gr-gate-microservice (apartamento de destino de una visita) |
+| `GET` | `/api/v1/internal/apartments/facturables?page=&size=` | Página `{ content: [{ id, torre, numero, activo, coeficienteCopropiedad }], page, size, totalElements, totalPages }`, ordenada por torre y número, con activos e inactivos; `size` máximo 500 | gr-billing-microservice (valor por coeficiente y generación de cobros) |
 
 El apartamento de un usuario se resuelve con la misma precedencia del claim `tipoResidente`: la titularidad primero y, si no existe, el arrendamiento vigente.
 
