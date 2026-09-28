@@ -15,14 +15,14 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
 
-@Pattern(regexp = "^$|^(3\\d{9}|60\\d{8})$", message = "el telefono debe tener 10 digitos: celular (3xx) o fijo nacional (60x)")
+@Pattern(regexp = "^\\s*\\p{L}[\\p{L}\\p{M}' .-]*$", message = "solo admite letras, espacios, apostrofo, punto y guion, y debe empezar por una letra")
 @Constraint(validatedBy = {})
 @Target({FIELD, METHOD, PARAMETER, ANNOTATION_TYPE, RECORD_COMPONENT})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface PhoneFormat {
+public @interface PersonName {
 
-    String message() default "el telefono debe tener 10 digitos: celular (3xx) o fijo nacional (60x)";
+    String message() default "solo admite letras, espacios, apostrofo, punto y guion, y debe empezar por una letra";
 
     Class<?>[] groups() default {};
 

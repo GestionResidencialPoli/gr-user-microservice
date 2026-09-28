@@ -211,6 +211,22 @@ El propósito es que los módulos financiero, de comunicaciones y de reservas di
 
 Como el claim se calcula al emitir el token, un cambio de vínculo residencial se refleja en la siguiente emisión. Un access token ya entregado conserva el valor anterior hasta expirar, dentro de la misma ventana descrita en `docs/decisiones/ADR-001-estrategia-tokens.md`.
 
+### Formatos validados en la entrada
+
+Todos los DTOs validan formato, no solo longitud. Un formato inválido responde `400` con el campo en el mensaje. Las mismas reglas aplican en gr-gate-microservice y en los formularios del frontend.
+
+| Dato | Regla | Anotación |
+| --- | --- | --- |
+| Nombre y apellido | Letras (con tildes y eñe), espacios, apóstrofo, punto y guion; empieza por letra | `@PersonName` |
+| Documento | Letras, dígitos y guion, de 4 a 30 | `@DocumentNumberFormat` |
+| Correo | Con dominio y extensión (`nombre@dominio.com`) | `@EmailFormat` + `@Email` |
+| Teléfono | 10 dígitos: celular (`3xx`) o fijo nacional (`60x`); vacío permitido | `@PhoneFormat` |
+| Torre y número de apartamento | Letras, dígitos y guion, hasta 20 | `@UnitCode` |
+| Piso | Entre 0 y 200 | `@PositiveOrZero @Max(200)` |
+| Contraseña | Entre 8 y 72 caracteres, con minúscula, mayúscula y dígito (72 es el límite de bcrypt) | `@PasswordPolicy` |
+
+Los espacios al inicio y al final se toleran porque el servicio los recorta antes de guardar.
+
 ### API interna entre microservicios
 
 `/api/v1/internal/**` solo atiende llamadas servicio a servicio: exige el encabezado `X-Internal-Token` con el valor de `INTERNAL_SERVICE_TOKEN` y el gateway no la expone.
