@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest(properties = {
         "spring.jpa.show-sql=false",
         "jwt.secret=a-secret-of-at-least-32-characters-long",
+        "jwt.encryption-key=Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE",
         "internal.service.token=a-secret-of-at-least-32-characters-long"
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -131,6 +132,7 @@ class IdentitySchemaIntegrationIT {
                             "--spring.jpa.hibernate.ddl-auto=validate",
                             "--spring.main.banner-mode=off",
                             "--jwt.secret=a-secret-of-at-least-32-characters-long",
+                            "--jwt.encryption-key=Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE",
                             "--internal.service.token=a-secret-of-at-least-32-characters-long"
                     )) {
                 // El contexto no debe llegar a iniciar.

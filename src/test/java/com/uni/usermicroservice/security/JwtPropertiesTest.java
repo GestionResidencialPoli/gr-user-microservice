@@ -13,6 +13,7 @@ class JwtPropertiesTest {
 
     private static final String VALID_SECRET = "un-secreto-local-de-mas-de-32-caracteres";
     private static final String UNRESOLVED_PLACEHOLDER = "${JWT_SECRET}";
+    private static final String VALID_ENCRYPTION_KEY = "Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE";
 
     private static ValidatorFactory factory;
     private static Validator validator;
@@ -28,8 +29,12 @@ class JwtPropertiesTest {
         factory.close();
     }
 
+    private JwtProperties propertiesWithEncryptionKey(String encryptionKey) {
+        return new JwtProperties(VALID_SECRET, encryptionKey, 15, 7);
+    }
+
     private JwtProperties propertiesWithSecret(String secret) {
-        return new JwtProperties(secret, 15, 7);
+        return new JwtProperties(secret, VALID_ENCRYPTION_KEY, 15, 7);
     }
 
     @Test
@@ -68,7 +73,20 @@ class JwtPropertiesTest {
 
     @Test
     void anExpirationThatIsNotPositiveIsRejected() {
-        assertThat(validator.validate(new JwtProperties(VALID_SECRET, 0, 7))).hasSize(1);
-        assertThat(validator.validate(new JwtProperties(VALID_SECRET, 15, -1))).hasSize(1);
+        assertThat(validator.validate(new JwtProperties(VALID_SECRET, VALID_ENCRYPTION_KEY, 0, 7))).hasSize(1);
+        assertThat(validator.validate(new JwtProperties(VALID_SECRET, VALID_ENCRYPTION_KEY, 15, -1))).hasSize(1);
+    }
+
+    @Test
+    void aMissingEncryptionKeyIsRejected() {
+        assertThat(validator.validate(propertiesWithEncryptionKey(null)))
+                .anySatisfy(violation -> assertThat(violation.getMessage()).contains("JWT_ENCRYPTION_KEY"));
+    }
+
+    @Test
+    void anEncryptionKeyThatIsNotThirtyTwoBytesInBase64UrlIsRejected() {
+        assertThat(validator.validate(propertiesWithEncryptionKey("demasiado-corta"))).hasSize(1);
+        assertThat(validator.validate(propertiesWithEncryptionKey("${JWT_ENCRYPTION_KEY}"))).hasSize(1);
+        assertThat(validator.validate(propertiesWithEncryptionKey(VALID_ENCRYPTION_KEY + "A"))).hasSize(1);
     }
 }
