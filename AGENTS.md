@@ -147,8 +147,9 @@ Inspeccionar visualmente el SVG después de generarlo y confirmar que las cardin
 
 - Documentar toda variable de entorno en `.env.example` y en el README.
 - Nunca versionar secretos, tokens, credenciales reales ni datos personales.
-- Variables actuales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JPA_SHOW_SQL`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES`, `JWT_REFRESH_TOKEN_EXPIRATION_DAYS`, `CORS_ALLOWED_ORIGINS` y `COOKIE_SECURE`.
-- `JWT_SECRET` es obligatoria y no tiene valor por defecto: la aplicación no debe arrancar si falta.
+- Variables actuales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JPA_SHOW_SQL`, `JWT_SECRET`, `JWT_ENCRYPTION_KEY`, `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES`, `JWT_REFRESH_TOKEN_EXPIRATION_DAYS`, `CORS_ALLOWED_ORIGINS` y `COOKIE_SECURE`.
+- `JWT_SECRET` y `JWT_ENCRYPTION_KEY` son obligatorias y no tienen valor por defecto: la aplicación no debe arrancar si falta alguna.
+- El access token es un JWT anidado: JWS HS256 cifrado como JWE (`dir` + `A256GCM`, `cty: JWT`). No emitir ni aceptar un JWS plano.
 
 ## Autenticación: cookies, no encabezado Authorization
 

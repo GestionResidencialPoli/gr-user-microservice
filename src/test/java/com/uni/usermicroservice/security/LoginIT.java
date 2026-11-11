@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
@@ -34,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LoginIT extends AbstractIntegrationTest {
 
     private static final String TEST_SECRET = "a-secret-of-at-least-32-characters-long";
+    private static final String TEST_ENCRYPTION_KEY = "Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE";
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     @LocalServerPort
@@ -161,9 +164,13 @@ class LoginIT extends AbstractIntegrationTest {
                 .expiration(Date.from(past.plusSeconds(60)))
                 .signWith(key)
                 .compact();
+        String encryptedExpiredToken = Jwts.builder()
+                .content(expiredToken.getBytes(StandardCharsets.UTF_8), "JWT")
+                .encryptWith(new SecretKeySpec(Base64.getUrlDecoder().decode(TEST_ENCRYPTION_KEY), "AES"), Jwts.ENC.A256GCM)
+                .compact();
 
         client.get().uri("/api/v1/test/authenticated-only")
-                .cookie("access_token", expiredToken)
+                .cookie("access_token", encryptedExpiredToken)
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNAUTHORIZED);
     }

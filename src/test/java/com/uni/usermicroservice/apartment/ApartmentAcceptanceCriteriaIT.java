@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "jwt.secret=a-secret-of-at-least-32-characters-long",
+                "jwt.encryption-key=Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE",
                 "jwt.access-token-expiration-minutes=15",
                 "jwt.refresh-token-expiration-days=7",
                 "app.cors.allowed-origins=http://localhost:3000",
