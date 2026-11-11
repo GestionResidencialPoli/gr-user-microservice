@@ -19,9 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtAuthenticationFilterTest {
 
     private static final String SECRET = "a-secret-of-at-least-32-characters-long";
+    private static final String ENCRYPTION_KEY = "Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE";
     private static final String ACCESS_COOKIE_NAME = "access_token";
 
-    private final JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(new JwtProperties(SECRET, 15, 7));
+    private final JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(new JwtProperties(SECRET, ENCRYPTION_KEY, 15, 7));
     private final CookieProperties cookieProperties =
             new CookieProperties(true, "Strict", ACCESS_COOKIE_NAME, "refresh_token", "/api/v1/auth");
     private final UserRepository userRepository = Mockito.mock(UserRepository.class);

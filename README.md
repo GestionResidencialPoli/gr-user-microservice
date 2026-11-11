@@ -29,6 +29,7 @@ El servicio se configura mediante variables de entorno, con valores por defecto 
 | `DB_PASSWORD` | Contraseña de la base de datos     | `postgres`                                     |
 | `JPA_SHOW_SQL` | Muestra las sentencias SQL de JPA | `false`                                        |
 | `JWT_SECRET` | Clave de firma HMAC del access token (obligatoria, mínimo 32 caracteres) | *(sin valor por defecto, la app no arranca sin ella)* |
+| `JWT_ENCRYPTION_KEY` | Clave AES-256 con la que se cifra el access token ya firmado (32 bytes en base64url, 43 caracteres) | *(sin valor por defecto, la app no arranca sin ella)* |
 | `JWT_ACCESS_TOKEN_EXPIRATION_MINUTES` | Minutos de vigencia del access token | `15` |
 | `JWT_REFRESH_TOKEN_EXPIRATION_DAYS` | Días de vigencia del refresh token | `7` |
 | `CORS_ALLOWED_ORIGINS` | Origen(es) permitidos para el frontend Next.js | `http://localhost:3000` |
@@ -53,7 +54,17 @@ Que la instrucción viva en `application-dev.properties` y no en `application.pr
 
 En cualquier entorno desplegado no hay `.env`: la configuración llega por variables de entorno reales, que además tienen más precedencia que este archivo.
 
-`JWT_SECRET` es la única variable sin valor por defecto, y es deliberado. Un secreto con valor por defecto termina algún día en producción sin que nadie se dé cuenta; sin él, arrancar mal es imposible. `JwtProperties` valida además que tenga al menos 32 caracteres, que es lo que exige HMAC-SHA256.
+`JWT_SECRET` y `JWT_ENCRYPTION_KEY` no tienen valor por defecto, y es deliberado. Un secreto con valor por defecto termina algún día en producción sin que nadie se dé cuenta; sin él, arrancar mal es imposible. `JwtProperties` valida además que `JWT_SECRET` tenga al menos 32 caracteres, que es lo que exige HMAC-SHA256, y que `JWT_ENCRYPTION_KEY` sea exactamente una clave de 32 bytes en base64url, que es lo que exige AES-256-GCM. Se genera con:
+
+```bash
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
+```
+
+### Token cifrado (JWT anidado)
+
+El access token no viaja como un JWT legible. Primero se firma con HS256 (`JWT_SECRET`), lo que garantiza que nadie lo alteró, y ese JWS se cifra después como contenido de un JWE compacto con cabecera `{"alg":"dir","enc":"A256GCM","cty":"JWT"}` (`JWT_ENCRYPTION_KEY`), lo que garantiza que nadie puede leer sus claims. El valor de la cookie `access_token` tiene por eso cinco segmentos y pegarlo en jwt.io no muestra el correo, el id ni los roles.
+
+Para validarlo, cada servicio descifra el JWE y solo entonces verifica la firma del JWS interior. Un JWS plano, un JWE cifrado con otra clave o uno manipulado se rechazan igual que una firma inválida. Todos los servicios que validan el token (gateway, muro, reservas, portería, finanzas y contacto) comparten las dos claves.
 
 ### Autenticación por cookies
 

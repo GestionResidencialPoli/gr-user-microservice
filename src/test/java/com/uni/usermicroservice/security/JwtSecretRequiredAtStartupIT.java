@@ -33,6 +33,7 @@ class JwtSecretRequiredAtStartupIT {
                             "--spring.datasource.username=" + POSTGRES.getUsername(),
                             "--spring.datasource.password=" + POSTGRES.getPassword(),
                             "--spring.main.banner-mode=off",
+                            "--jwt.encryption-key=Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE",
                             "--internal.service.token=a-secret-of-at-least-32-characters-long"
                     )) {
                 throw new IllegalStateException("El contexto no debia iniciar sin JWT_SECRET");
