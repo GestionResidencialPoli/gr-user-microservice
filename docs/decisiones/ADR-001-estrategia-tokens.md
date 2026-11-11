@@ -31,6 +31,15 @@ Para el acceso desde cualquier aplicación de rol se admite un puente SSO limita
 
 La correspondencia audiencia-rol (`admin`→`ADMINISTRACION`, `residente`→`RESIDENTE`, `vigilante`→`VIGILANTE`) es la única fuente de verdad y se aplica dos veces: al emitir el código (el rol del solicitante debe corresponder a la audiencia pedida) y al canjearlo (el rol del usuario dueño del código, revalidado en ese momento, debe seguir correspondiendo). Una audiencia desconocida responde `400`; una audiencia que no corresponde al rol, `403`.
 
+### Cifrado del access token (GR-192)
+
+Un JWT firmado protege la integridad, pero su payload es solo base64url: cualquiera que obtenga la cookie (un log, una captura de red sin TLS, un navegador compartido) puede leer el correo, el id y los roles. Por eso el access token se emite como **JWT anidado**: el JWS HS256 de siempre (`JWT_SECRET`) se cifra como contenido de un JWE compacto con `alg: dir`, `enc: A256GCM` y `cty: JWT`, usando una clave independiente de 32 bytes (`JWT_ENCRYPTION_KEY`).
+
+- Son dos algoritmos con dos claves distintas: AES-256-GCM da confidencialidad (y su propia autenticación del cifrado) y HMAC-SHA256 sigue garantizando quién emitió los claims. Filtrar una de las claves no basta para leer y falsificar a la vez.
+- Se cifra con clave directa (`dir`) y no con envoltura de clave (`A256KW`, `RSA-OAEP`) porque emisor y verificadores ya comparten secretos simétricos; una clave por token no aporta nada en este modelo.
+- Todo verificador descifra primero y verifica la firma después. Un JWS plano se rechaza: no existe un modo de compatibilidad, así que todos los servicios se despliegan juntos con la misma `JWT_ENCRYPTION_KEY`.
+- El refresh token no cambia: ya es un valor aleatorio opaco cuyo hash vive en `refresh_tokens`, no contiene información que cifrar.
+
 ## Por qué no las otras alternativas
 
 - **Alternativa 1** se descarta porque no resuelve la exigencia real de HU-1.5/1.6: aceptar hasta 15 minutos de ventana de exposición tras desactivar a un vigilante que hoy opera el control de acceso físico no es un riesgo aceptable para este dominio.

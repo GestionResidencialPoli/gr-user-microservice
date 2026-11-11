@@ -33,7 +33,8 @@ class InternalServiceTokenRequiredAtStartupIT {
                             "--spring.datasource.username=" + POSTGRES.getUsername(),
                             "--spring.datasource.password=" + POSTGRES.getPassword(),
                             "--spring.main.banner-mode=off",
-                            "--jwt.secret=a-secret-of-at-least-32-characters-long"
+                            "--jwt.secret=a-secret-of-at-least-32-characters-long",
+                            "--jwt.encryption-key=Y2xhdmUtZGUtcHJ1ZWJhcy1kZS0zMi1ieXRlcy1vayE"
                     )) {
                 throw new IllegalStateException("El contexto no debia iniciar sin INTERNAL_SERVICE_TOKEN");
             }

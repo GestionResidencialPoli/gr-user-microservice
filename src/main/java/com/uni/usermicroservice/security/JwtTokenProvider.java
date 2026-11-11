@@ -8,8 +8,10 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -21,12 +23,15 @@ public class JwtTokenProvider {
     private static final String ROLES_CLAIM = "roles";
     private static final String USER_ID_CLAIM = "uid";
     private static final String TIPO_RESIDENTE_CLAIM = "tipoResidente";
+    private static final String NESTED_JWT_CONTENT_TYPE = "JWT";
 
     private final SecretKey signingKey;
+    private final SecretKey encryptionKey;
     private final long accessTokenExpirationMinutes;
 
     public JwtTokenProvider(JwtProperties jwtProperties) {
         this.signingKey = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
+        this.encryptionKey = new SecretKeySpec(Base64.getUrlDecoder().decode(jwtProperties.encryptionKey()), "AES");
         this.accessTokenExpirationMinutes = jwtProperties.accessTokenExpirationMinutes();
     }
 
@@ -45,20 +50,30 @@ public class JwtTokenProvider {
             builder.claim(TIPO_RESIDENTE_CLAIM, tipoResidente.name());
         }
 
-        return builder
+        String signedToken = builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenExpirationMinutes * 60)))
                 .signWith(signingKey, Jwts.SIG.HS256)
+                .compact();
+
+        return Jwts.builder()
+                .content(signedToken.getBytes(StandardCharsets.UTF_8), NESTED_JWT_CONTENT_TYPE)
+                .encryptWith(encryptionKey, Jwts.ENC.A256GCM)
                 .compact();
     }
 
     public Optional<Claims> parseClaims(String token) {
         try {
+            byte[] signedToken = Jwts.parser()
+                    .decryptWith(encryptionKey)
+                    .build()
+                    .parseEncryptedContent(token)
+                    .getPayload();
             return Optional.of(
                     Jwts.parser()
                             .verifyWith(signingKey)
                             .build()
-                            .parseSignedClaims(token)
+                            .parseSignedClaims(new String(signedToken, StandardCharsets.UTF_8))
                             .getPayload()
             );
         } catch (JwtException | IllegalArgumentException ex) {
