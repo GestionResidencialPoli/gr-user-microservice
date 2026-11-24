@@ -5,6 +5,7 @@ import com.uni.usermicroservice.identity.domain.UserRepository;
 import com.uni.usermicroservice.identity.domain.UserStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -31,11 +33,13 @@ public class PasswordResetService {
             UserRepository userRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             RefreshTokenRepository refreshTokenRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.eventPublisher = eventPublisher;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -68,6 +72,7 @@ public class PasswordResetService {
         token.setUsedAt(now);
 
         revokeActiveSessionsOf(user, now);
+        eventPublisher.publishEvent(new PasswordChangedEvent(user.getId()));
     }
 
     private void issueTokenFor(User user) {

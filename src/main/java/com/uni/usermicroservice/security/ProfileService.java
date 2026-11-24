@@ -4,6 +4,7 @@ import com.uni.usermicroservice.identity.domain.ResidencyTypeService;
 import com.uni.usermicroservice.identity.domain.Role;
 import com.uni.usermicroservice.identity.domain.User;
 import com.uni.usermicroservice.identity.domain.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,17 +19,20 @@ public class ProfileService {
     private final ResidencyTypeService residencyTypeService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProfileService(
             UserRepository userRepository,
             ResidencyTypeService residencyTypeService,
             PasswordEncoder passwordEncoder,
-            RefreshTokenRepository refreshTokenRepository
+            RefreshTokenRepository refreshTokenRepository,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.userRepository = userRepository;
         this.residencyTypeService = residencyTypeService;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -54,6 +58,7 @@ public class ProfileService {
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         revokeActiveSessionsOf(user);
+        eventPublisher.publishEvent(new PasswordChangedEvent(user.getId()));
     }
 
     private void revokeActiveSessionsOf(User user) {
